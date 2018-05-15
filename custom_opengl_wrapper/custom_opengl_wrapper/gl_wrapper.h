@@ -50,6 +50,8 @@ private:
 		eye_look_pos,
 		up = glm::vec3(0, 1, 0);
 
+	glm::vec4 clear_color;
+
 	glm::mat4
 		model,
 		view,
@@ -72,7 +74,7 @@ private:
 	}
 	glm::mat4 getPerspective()
 	{
-		return glm::perspective(glm::radians(45.0f), (float)window_size.x / (float)window_size.y, 0.1f, 100.0f);;
+		return glm::perspective(glm::radians(fov), aspect_ratio, near_z, far_z);
 	}
 	glm::mat4 getPerspectiveView()
 	{
@@ -236,6 +238,43 @@ public:
 	glm::mat4 * get_proj_mat()
 	{
 		return &projection;
+	}
+
+	void set_clear_color(glm::vec3 color)
+	{
+		clear_color = glm::vec4(color, 1.0f);
+	}
+
+	void set_clear_color(glm::vec4 color)
+	{
+		clear_color = color;
+	}
+
+	void clearDepthBuffer()
+	{
+		glClear(GL_DEPTH_BUFFER_BIT);
+	}
+	void clearColorBuffer()
+	{
+		glClear(GL_COLOR_BUFFER_BIT);
+	}
+	void clearColor()
+	{
+		glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
+	}
+	void clearBuffers()
+	{
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	}
+	void clearAll()
+	{
+		clearBuffers();
+		clearColor();
+	}
+	
+	glm::vec2 get_window_size()
+	{
+		return window_size;
 	}
 
 };

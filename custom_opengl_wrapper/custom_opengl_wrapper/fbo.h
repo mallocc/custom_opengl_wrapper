@@ -3,34 +3,15 @@
 #include "glm.h"
 #include "opengl.h"
 
+typedef GLuint FBOID;
+
 struct FBO
 {
-	GLuint fbo, tex;
+private:
+	FBOID id;
+	GLuint tex;
 
 	int w = 0, h = 0;
-
-	FBO() {}
-
-	FBO(int w, int h)
-	{
-		this->w = w; this->h = h;
-		getFrameBuffer(&fbo, &tex);
-	}
-
-
-	void bind()
-	{
-		// Render to our framebuffer
-		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-		// Set the list of draw buffers.
-		GLenum DrawBuffers[1] = { GL_COLOR_ATTACHMENT0 };
-		glDrawBuffers(1, DrawBuffers); // "1" is the size of DrawBuffers
-	}
-
-	void unbind()
-	{
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	}
 
 	void getFrameBuffer(GLuint * FramebufferName, GLuint * renderedTexture)
 	{
@@ -61,7 +42,44 @@ struct FBO
 		glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, *renderedTexture, 0);
 	}
 
-	
+public:
+
+	FBO() {}
+
+	FBO(int w, int h)
+	{
+		this->w = w; this->h = h;
+		getFrameBuffer(&id, &tex);
+	}
+	FBO(glm::vec2 window_size)
+	{
+		this->w = window_size.x; this->h = window_size.y;
+		getFrameBuffer(&id, &tex);
+	}
+
+	void bind()
+	{
+		// Render to our framebuffer
+		glBindFramebuffer(GL_FRAMEBUFFER, id);
+		// Set the list of draw buffers.
+		GLenum DrawBuffers[1] = { GL_COLOR_ATTACHMENT0 };
+		glDrawBuffers(1, DrawBuffers); // "1" is the size of DrawBuffers
+	}
+
+	static void unbind()
+	{
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	}	
+
+	GLuint getTex()
+	{
+		return tex;
+	}
+};
+
+struct FBOManager
+{
+
 };
 
 //void get3DTexture(GLuint * tex, int w, int h, int d, GLuint * data)

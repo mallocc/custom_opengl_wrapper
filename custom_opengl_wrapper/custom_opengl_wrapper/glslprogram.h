@@ -24,7 +24,9 @@ private:
 
 	std::map<VarHandleID, VarHandle> handles;
 
-	VarHandleID model_mat;
+	VarHandleID 
+		model_mat,
+		tex;
 
 	const char * TAG = "GLSLProgram";
 
@@ -162,10 +164,10 @@ public:
 
 	GLSLProgram * set_model_mat4_handle(glm::mat4 * mat)
 	{
-		VarHandle model_handle = VarHandle("u_m", mat);
-		model_handle.init(ID);
-		model_mat = model_handle.get_handle_id();
-		add_handle(model_handle);		
+		VarHandle handle = VarHandle("u_m", mat);
+		handle.init(ID);
+		model_mat = handle.get_handle_id();
+		add_handle(handle);		
 		return this;
 	}
 
@@ -179,9 +181,23 @@ public:
 		return add_handle(VarHandle("u_p", mat));
 	}
 
+	GLSLProgram * set_tex_handle()
+	{
+		VarHandle handle = VarHandle("u_tex");
+		handle.init(ID);
+		tex = handle.get_handle_id();
+		add_handle(handle);
+		return this;
+	}
+
 	VarHandle * get_model_mat4_handle()
 	{
 		return get_handle(model_mat);
+	}
+
+	VarHandle * get_tex_handle()
+	{
+		return get_handle(tex);
 	}
 
 };
