@@ -1,0 +1,206 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Header Files\gl">
+      <UniqueIdentifier>{3ccd2ea2-b26b-4560-bcb9-5d2bf0394f1e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\stb_image">
+      <UniqueIdentifier>{baa66421-1ea7-4e0a-bc4e-5435ed851c9b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\tiny_obj_loader">
+      <UniqueIdentifier>{6557bcde-81f8-4c53-8fb4-bc2d3ada4344}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\tiny_obj_loader">
+      <UniqueIdentifier>{ddf16ebc-eead-4be0-af01-aed20dc328a6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\OpenGL_Wrapper">
+      <UniqueIdentifier>{2f8f11eb-3546-4640-9e40-13a4617e7042}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\OpenGL_Wrapper">
+      <UniqueIdentifier>{b3614c0e-7117-4e62-b904-8e6f1b6c1454}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="shaders">
+      <UniqueIdentifier>{2691a573-7d67-438b-8ca1-72acd489e6ca}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="include\tiny_object_loader\tiny_obj_loader.cpp">
+      <Filter>Source Files\tiny_obj_loader</Filter>
+    </ClCompile>
+    <ClCompile Include="gl_wrapper.cpp">
+      <Filter>Source Files\OpenGL_Wrapper</Filter>
+    </ClCompile>
+    <ClCompile Include="load_image.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Obj.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="tiny_obj_loader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="include\gl\glew\glew-2.1.0\include\GL\eglew.h">
+      <Filter>Header Files\gl</Filter>
+    </ClInclude>
+    <ClInclude Include="include\gl\glew\glew-2.1.0\include\GL\glew.h">
+      <Filter>Header Files\gl</Filter>
+    </ClInclude>
+    <ClInclude Include="include\gl\glfw\glfw-3.2.1.bin.WIN64\include\GLFW\glfw3.h">
+      <Filter>Header Files\gl</Filter>
+    </ClInclude>
+    <ClInclude Include="include\gl\glfw\glfw-3.2.1.bin.WIN32\include\GLFW\glfw3.h">
+      <Filter>Header Files\gl</Filter>
+    </ClInclude>
+    <ClInclude Include="include\gl\glfw\glfw-3.2.1.bin.WIN32\include\GLFW\glfw3native.h">
+      <Filter>Header Files\gl</Filter>
+    </ClInclude>
+    <ClInclude Include="include\gl\glfw\glfw-3.2.1.bin.WIN64\include\GLFW\glfw3native.h">
+      <Filter>Header Files\gl</Filter>
+    </ClInclude>
+    <ClInclude Include="include\gl\glew\glew-2.1.0\include\GL\glxew.h">
+      <Filter>Header Files\gl</Filter>
+    </ClInclude>
+    <ClInclude Include="include\gl\glew\glew-2.1.0\include\GL\wglew.h">
+      <Filter>Header Files\gl</Filter>
+    </ClInclude>
+    <ClInclude Include="include\stb_image\stb_image.h">
+      <Filter>Header Files\stb_image</Filter>
+    </ClInclude>
+    <ClInclude Include="include\stb_image\stb_image_resize.h">
+      <Filter>Header Files\stb_image</Filter>
+    </ClInclude>
+    <ClInclude Include="include\stb_image\stb_image_write.h">
+      <Filter>Header Files\stb_image</Filter>
+    </ClInclude>
+    <ClInclude Include="include\stb_image\stb_perlin.h">
+      <Filter>Header Files\stb_image</Filter>
+    </ClInclude>
+    <ClInclude Include="include\tiny_object_loader\tiny_obj_loader.h">
+      <Filter>Header Files\tiny_obj_loader</Filter>
+    </ClInclude>
+    <ClInclude Include="gl_wrapper.h">
+      <Filter>Header Files\OpenGL_Wrapper</Filter>
+    </ClInclude>
+    <ClInclude Include="colors.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="fbo.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="glm.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="glslprogram.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="lerp.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="light.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="load_image.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Obj.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="opengl.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="stb_image.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="tiny_obj_loader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="varhandle.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="vertex.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="shaders\basic.frag">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="shaders\basic.vert">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="shaders\basic_texture.frag">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="shaders\basic_texture.vert">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="shaders\basic_texture_glow.frag">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="shaders\blueshift.frag">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="shaders\combine.frag">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="shaders\complex.frag">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="shaders\complex.vert">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="shaders\complex2.frag">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="shaders\complex2.vert">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="shaders\phong.frag">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="shaders\phong.vert">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="shaders\phong_texture.frag">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="shaders\phong_texture.vert">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="shaders\phong_texture_normals.frag">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="shaders\phong_texture_normals.vert">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="shaders\render_to_texture _glow.frag">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="shaders\render_to_texture.frag">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="shaders\render_to_texture.vert">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="shaders\render_to_texture2.frag">
+      <Filter>shaders</Filter>
+    </None>
+  </ItemGroup>
+</Project>
