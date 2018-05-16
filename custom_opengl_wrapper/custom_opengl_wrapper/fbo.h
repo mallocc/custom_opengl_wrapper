@@ -13,8 +13,13 @@ private:
 
 	int w = 0, h = 0;
 
+	std::vector<Obj*> objects;
+
+	const char * TAG = "FBO";
+
 	void getFrameBuffer(GLuint * FramebufferName, GLuint * renderedTexture)
 	{
+		printf("[%-11s] Creating FBO:\n", TAG);
 		*FramebufferName = 0;
 		glGenFramebuffers(1, FramebufferName);
 		glBindFramebuffer(GL_FRAMEBUFFER, *FramebufferName);
@@ -40,6 +45,13 @@ private:
 
 		// Set "renderedTexture" as our colour attachement #0
 		glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, *renderedTexture, 0);
+		
+		glFlush();
+
+		printf("[%-11s]    FBO    -> %i\n", TAG, id);
+		printf("[%-11s]    Tex ID -> %i\n", TAG, tex);
+		//printf("[%-11s]           -> %i\n", TAG,);
+
 	}
 
 public:
@@ -61,7 +73,7 @@ public:
 	{
 		// Render to our framebuffer
 		glBindFramebuffer(GL_FRAMEBUFFER, id);
-		// Set the list of draw buffers.
+		//// Set the list of draw buffers.
 		GLenum DrawBuffers[1] = { GL_COLOR_ATTACHMENT0 };
 		glDrawBuffers(1, DrawBuffers); // "1" is the size of DrawBuffers
 	}
@@ -75,7 +87,27 @@ public:
 	{
 		return tex;
 	}
+
+	void add_object(Obj * object)
+	{
+		objects.push_back(object);
+	}
+
+	void draw_objects(VarHandle * model, VarHandle * tex, VarHandle * normal_map, VarHandle * height)
+	{
+		for (Obj * o : objects)
+			o->draw(0, model, tex, normal_map, height);
+	}
+
+	void binding_draw_objects(VarHandle * model, VarHandle * tex, VarHandle * normal_map, VarHandle * height)
+	{
+		bind();
+		for (Obj * o : objects)
+			o->draw(0, model, tex, normal_map, height);
+		unbind();
+	}
 };
+
 
 struct FBOManager
 {

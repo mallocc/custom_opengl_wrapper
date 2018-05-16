@@ -206,6 +206,7 @@ struct GLSLProgramManager
 {
 private:
 	std::map<GLSLProgramID, GLSLProgram> shader_programs;
+	GLSLProgramID current_program;
 
 public:
 
@@ -214,6 +215,7 @@ public:
 	GLSLProgram * load_program(GLSLProgramID id)
 	{		
 		shader_programs[id].load();
+		current_program = id;
 		return get_program(id);
 	}
 
@@ -237,6 +239,11 @@ public:
 	GLSLProgram * get_program(GLSLProgramID id)
 	{
 		return &shader_programs[id];
+	}
+
+	GLSLProgram * get_current_program()
+	{
+		return &shader_programs[current_program];
 	}
 
 	GLSLProgramID add_program(

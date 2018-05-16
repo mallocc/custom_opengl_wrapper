@@ -10,7 +10,7 @@
 
 #include <vector>;
 
-GLSLProgramManager	program_manager;
+GLSLProgramManager program_manager;
 
 GLContent content;
 
@@ -46,6 +46,9 @@ void init()
 		program_manager.add_program("shaders/basic_texture.vert", "shaders/basic_texture.frag",
 			content.get_model_mat(), content.get_view_mat(), content.get_proj_mat());
 
+	//// ADDING HANDLES TO PROGRAMS
+	printf("\n");
+	printf("Adding handles to GLSL programs...\n");
 	program_manager.get_program(PHONG_PROGRAM)
 		->add_handle(VarHandle("u_ambient_color", &ambient_color))
 		->add_handle(VarHandle("u_light_color", &light.color))
@@ -56,23 +59,22 @@ void init()
 	program_manager.get_program(RENDER_PROGRAM)
 		->add_handle(VarHandle("u_tex"));
 
+	//// CREATE FBOS
 	basic_fbo = FBO(content.get_window_size());
-
-
+	
+	//// ADD OBJECTS TO FBOS
+	basic_fbo.add_object(&sphere);
+	
 	//// CREATE OBJECTS
 	printf("\n");
 	printf("Initialising objects...\n");
 
-	std::vector<glm::vec3>
-		v,
-		c,
-		n,
-		t;
+	std::vector<glm::vec3> v, c, n, t;
 
 	v = generate_square_mesh(1, 1);
 
 	screen_texture = Obj(
-		"", "", "",
+		"", "", "",`
 		//"textures/moss_color.jpg",
 		//"textures/moss_norm.jpg",
 		//"textures/moss_height.jpg",
@@ -84,7 +86,6 @@ void init()
 	);
 
 	int res = 200;
-
 	v = generate_sphere(res, res);
 
 	sphere = Obj(
@@ -97,8 +98,17 @@ void init()
 	);
 }
 
+void physics()
+{
+	light.pos = glm::quat(glm::vec3(0, glm::radians(1.0f), 0)) * light.pos;
+}
+
 void draw_loop()
 {
+	physics();
+
+	FBO::unbind();
+
 	VarHandle 
 		*model_mat_handle,
 		*texture_handle;
@@ -106,25 +116,24 @@ void draw_loop()
 	content.clearAll();
 	content.loadPerspective();
 	program_manager.load_program(PHONG_PROGRAM);
-	model_mat_handle = program_manager.get_program(PHONG_PROGRAM)->get_model_mat4_handle();
-	basic_fbo.bind();
-	sphere.draw(0, model_mat_handle, nullptr, nullptr, nullptr);
-	FBO::unbind();
+	model_mat_handle = program_manager.get_current_program()->get_model_mat4_handle();
+	basic_fbo.draw_objects(model_mat_handle, nullptr, nullptr, nullptr);
+	//basic_fbo.binding_draw_objects(model_mat_handle, nullptr, nullptr, nullptr);
 
-	content.clearAll();
-	content.loadOrtho();
-	program_manager.load_program(RENDER_PROGRAM);
-	model_mat_handle = program_manager.get_program(RENDER_PROGRAM)->get_model_mat4_handle();
-	texture_handle = program_manager.get_program(RENDER_PROGRAM)->get_tex_handle();
-	screen_texture.setTex(basic_fbo.getTex());
-	screen_texture.draw(0, model_mat_handle, texture_handle, nullptr, nullptr);
+	//content.clearAll();
+	//content.loadOrtho();
+	//program_manager.load_program(RENDER_PROGRAM);
+	//model_mat_handle = program_manager.get_current_program()->get_model_mat4_handle();
+	//texture_handle = program_manager.get_current_program()->get_tex_handle();
+	//screen_texture.setTex(basic_fbo.getTex());
+	//screen_texture.draw(0, model_mat_handle, texture_handle, nullptr, nullptr);
 
 }
 
 int main()
 {
-	content.run(draw_loop, init);
 	content.set_clear_color(WHITE);
+	content.run(draw_loop, init);
 
 	return 0;
 }
