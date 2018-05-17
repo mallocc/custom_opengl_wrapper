@@ -193,5 +193,8 @@
     <None Include="shaders\render_to_texture2.frag">
       <Filter>shaders</Filter>
     </None>
+    <None Include="shaders\basic_texture2.frag">
+      <Filter>shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>

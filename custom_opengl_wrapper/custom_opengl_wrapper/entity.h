@@ -7,7 +7,7 @@
 #include "varhandle.h"
 #include <vector>
 
-struct Entity
+struct Mesh
 {
 private:
 	const char * TAG = "Entity";
@@ -29,9 +29,9 @@ public:
 		theta,
 		pre_theta;
 
-	Entity() {}
+	Mesh() {}
 
-	Entity(
+	Mesh(
 		const char *texfilename,
 		std::vector<Vertex>	data,
 		glm::vec3 _pos,

@@ -14,7 +14,7 @@ private:
 
 	int w = 0, h = 0;
 
-	std::vector<Entity*> entities;
+	std::vector<Mesh*> entities;
 
 	const char * TAG = "FBO";
 
@@ -112,21 +112,21 @@ public:
 		return tex;
 	}
 
-	void add_object(Entity * e)
+	void add_object(Mesh * e)
 	{
 		entities.push_back(e);
 	}
 
 	void draw_objects(VarHandle * model, VarHandle * tex)
 	{
-		for (Entity * e : entities)
+		for (Mesh * e : entities)
 			e->draw(0, model, tex);
 	}
 
 	void binding_draw_objects(VarHandle * model, VarHandle * tex)
 	{
 		bind();
-		for (Entity * e : entities)
+		for (Mesh * e : entities)
 			e->draw(0, model, tex);
 		unbind();
 	}

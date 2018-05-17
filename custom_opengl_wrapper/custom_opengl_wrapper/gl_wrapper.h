@@ -12,6 +12,98 @@ static void		error_callback(int error, const char* description)
 	_fgetchar();
 }
 
+struct Camera
+{
+	glm::vec3 pos, vel, dir, dir_vel, up, up_vel;
+
+	Camera() {}
+
+	Camera(glm::vec3 pos, glm::vec3 vel, glm::vec3 dir, glm::vec3 up)
+	{
+		this->pos = pos;
+		this->vel = vel;
+		this->dir = glm::normalize(dir);
+		this->up = up;
+	}
+
+	void update(float dt, float friction)
+	{
+		vel *= friction;
+		pos += vel * dt;
+		dir_vel *= friction;
+		dir += dir_vel;
+		up_vel *= friction;
+		up += up_vel;
+	}
+
+	void apply_force(glm::vec3 force)
+	{
+		vel += force;
+	}
+	void apply_force_foward()
+	{
+		vel += dir;
+	}
+	void apply_force_foward(float mag)
+	{
+		vel += dir * mag;
+	}
+	void apply_force_backward()
+	{
+		vel -= dir;
+	}
+	void apply_force_right()
+	{
+		vel += glm::cross(dir, up);
+	}
+	void apply_force_left()
+	{
+		vel += -glm::cross(dir, up);
+	}
+
+	void yaw_left(float amount)
+	{
+		dir = glm::quat(glm::vec3(0, 1, 0) * glm::radians(amount)) * dir;
+	}
+	void yaw_right(float amount)
+	{
+		dir = glm::quat(glm::vec3(0, -1, 0) * glm::radians(amount)) * dir;
+	}
+	void pitch_up(float amount)
+	{
+		glm::vec3 right = glm::cross(dir, up);
+		up = glm::quat(right * glm::radians(amount)) * up;
+		dir = glm::quat(right * glm::radians(amount)) * dir;
+	}
+	void pitch_down(float amount)
+	{
+		glm::vec3 right = -glm::cross(dir, up);
+		up = glm::quat(right * glm::radians(amount)) * up;
+		dir = glm::quat(right * glm::radians(amount)) * dir;
+	}
+	void roll_left(float amount);
+	void roll_right(float amount);
+
+	void brake(float friction)
+	{
+		vel *= friction;
+	}
+
+	glm::vec3 get_position()
+	{
+		return pos;
+	}
+
+	glm::vec3 get_look_position()
+	{
+		return pos + dir;
+	}
+
+	glm::vec3 get_up()
+	{
+		return up;
+	}
+};
 
 
 struct GLContent
@@ -156,6 +248,10 @@ private:
 		// enable texturineg
 		glEnable(GL_TEXTURE_2D);
 
+		glEnable(GL_BLEND);
+
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
 
 		// init
 		init();
@@ -257,4 +353,24 @@ public:
 		eye_pos = pos;
 	}
 
+	void set_eye_look_pos(glm::vec3 pos)
+	{
+		eye_look_pos = pos;
+	}
+
+	void set_up(glm::vec3 up)
+	{
+		this->up = up;
+	}
+
+	void set_camera(Camera * camera)
+	{
+		eye_pos = camera->pos;
+		eye_look_pos = camera->dir + camera->pos;
+		up = camera->up;
+	}
 };
+
+
+
+

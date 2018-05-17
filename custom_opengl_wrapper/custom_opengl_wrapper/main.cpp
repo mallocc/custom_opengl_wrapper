@@ -15,7 +15,9 @@ GLSLProgramManager program_manager;
 
 GLContent content;
 
-Entity
+Camera camera = Camera(glm::vec3(0, 0, -3), glm::vec3(), glm::vec3(0,0,3), glm::vec3(0, 1, 0));
+
+Mesh
 screen_texture,
 sphere, stars, bunny;
 
@@ -30,6 +32,7 @@ BASIC_PROGRAM,
 PHONG_PROGRAM,
 PHONG_TEXTURE_PROGRAM,
 RENDER_PROGRAM,
+RENDER_HALF_ALPHA_PROGRAM,
 BLUR_PROGRAM,
 MIX_PROGRAM;
 
@@ -61,6 +64,10 @@ void init()
 
 	RENDER_PROGRAM        =
 		program_manager.add_program("shaders/basic_texture.vert", "shaders/basic_texture.frag",
+			content.get_model_mat(), content.get_view_mat(), content.get_proj_mat());
+
+	RENDER_HALF_ALPHA_PROGRAM =
+		program_manager.add_program("shaders/basic_texture.vert", "shaders/basic_texture2.frag",
 			content.get_model_mat(), content.get_view_mat(), content.get_proj_mat());
 
 	BLUR_PROGRAM          =
@@ -96,6 +103,9 @@ void init()
 	program_manager.get_program(RENDER_PROGRAM)
 		->set_tex_handle();
 
+	program_manager.get_program(RENDER_HALF_ALPHA_PROGRAM)
+		->set_tex_handle();
+
 	program_manager.get_program(BLUR_PROGRAM)
 		->set_tex_handle()
 		->add_handle(VarHandle("u_glow_res", &blur_properties));
@@ -116,17 +126,17 @@ void init()
 	//// ADD OBJECTS TO FBOS
 	basic_fbo.add_object(&bunny);
 	blur_fbo .add_object(&bunny);
-	basic_fbo.add_object(&stars);
+	//basic_fbo.add_object(&stars);
 	
 	//// CREATE OBJECTS
 	printf("\n");
 	printf("Initialising objects...\n");
 
-	std::vector<glm::vec3> v, c, n, t;
+	std::vector<glm::vec3> v;
 
 	v = generate_square_mesh(1, 1);
 
-	screen_texture = Entity(
+	screen_texture = Mesh(
 		"",
 		pack_object(&v, GEN_UVS_RECTS, BLACK),
 		glm::vec3(),
@@ -138,7 +148,7 @@ void init()
 	int res = 200;
 	v = generate_sphere(res, res);
 
-	sphere = Entity(
+	sphere = Mesh(
 		"textures/mars.jpg",
 		pack_object(&v, GEN_UVS_SPHERE | GEN_NORMS, WHITE),
 		glm::vec3(0, 0, 0),
@@ -149,20 +159,20 @@ void init()
 
 	v = generate_sphere_invert(20, 20);
 
-	stars = Entity(
-		"textures/stars.jpg",
+	stars = Mesh(
+		"textures/back.jpg",
 		pack_object(&v, GEN_UVS_SPHERE | GEN_NORMS, BLACK),
 		glm::vec3(0, 0, 0),
 		glm::vec3(1, 0, 0),	glm::radians(0.0f),
 		glm::vec3(1, 0, 0),	glm::radians(90.0f),
-		glm::vec3(1, 1, 1) * 100.0f
+		glm::vec3(1, 1, 1) * 50.0f
 	);
 
 	v = load_model("objects/bunny.obj");
 
-	bunny = Entity(		
-		"",
-		pack_object(&v, GEN_ALL | GEN_COLOR_RAND, WHITE),
+	bunny = Mesh(		
+		"textures/197.bmp",
+		pack_object(&v, GEN_ALL, WHITE),
 		glm::vec3(0, 0, 0),
 		glm::vec3(1, 0, 0), glm::radians(0.0f),
 		glm::vec3(1, 0, 0), glm::radians(0.0f),
@@ -173,11 +183,13 @@ void init()
 void physics()
 {
 	//light.pos = glm::quat(glm::vec3(0, glm::radians(1.0f), 0)) * light.pos;
-	sphere.theta += glm::radians(0.1f);
+	bunny.theta += glm::radians(0.2f);
 }
 
 void draw_loop()
 {
+	content.set_camera(&camera);
+
 	physics();
 
 	FBO::unbind();
@@ -187,6 +199,7 @@ void draw_loop()
 		*texture_handle,
 		*texture1_handle;
 
+	// normal render to basic texture
 	content                            .clearAll();
 	content                            .loadPerspective();
 	program_manager                    .load_program(PHONG_TEXTURE_PROGRAM);
@@ -194,28 +207,71 @@ void draw_loop()
 	texture_handle   = program_manager .get_current_program()->get_tex_handle();
 	basic_fbo                          .binding_draw_objects(model_mat_handle, texture_handle);
 
-	content                            .clearAll();
+	/*content                            .clearAll();
 	content                            .loadOrtho();
 	program_manager                    .load_program(RENDER_PROGRAM);
 	model_mat_handle = program_manager .get_current_program()->get_model_mat4_handle();
 	texture_handle   = program_manager .get_current_program()->get_tex_handle();
 	basic_fbo                          .activate_texture(texture_handle);
 	screen_texture                     .draw(0, model_mat_handle, nullptr);
-	basic_fbo                          .deactivate_texture();
+	basic_fbo                          .deactivate_texture();*/
+
+	motionblur_fbo0.bind();
+		content.clearAll();
+		content.loadPerspective();
+		program_manager.load_program(PHONG_TEXTURE_PROGRAM);
+		model_mat_handle = program_manager.get_current_program()->get_model_mat4_handle();
+		texture_handle = program_manager.get_current_program()->get_tex_handle();
+		basic_fbo.draw_objects(model_mat_handle, texture_handle);
+		content.clearDepthBuffer();
+		content.loadOrtho();
+		program_manager.load_program(RENDER_HALF_ALPHA_PROGRAM);
+		model_mat_handle = program_manager.get_current_program()->get_model_mat4_handle();
+		texture_handle = program_manager.get_current_program()->get_tex_handle();
+		motionblur_fbo1.activate_texture(texture_handle);
+		screen_texture.draw(0, model_mat_handle, nullptr);
+		motionblur_fbo1.deactivate_texture();		
+	motionblur_fbo0.unbind();
+
+	motionblur_fbo1.bind();
+		content.clearAll();
+		content.loadOrtho();
+		program_manager.load_program(RENDER_PROGRAM);
+		model_mat_handle = program_manager.get_current_program()->get_model_mat4_handle();
+		texture_handle = program_manager.get_current_program()->get_tex_handle();
+		motionblur_fbo0.activate_texture(texture_handle);
+		screen_texture.draw(0, model_mat_handle, nullptr);
+		motionblur_fbo0.deactivate_texture();
+	motionblur_fbo1.unbind();
+
+	content.clearAll();
+	content.loadOrtho();
+	program_manager.load_program(RENDER_PROGRAM);
+	model_mat_handle = program_manager.get_current_program()->get_model_mat4_handle();
+	texture_handle = program_manager.get_current_program()->get_tex_handle();
+	motionblur_fbo1.activate_texture(texture_handle);
+	screen_texture.draw(0, model_mat_handle, nullptr);
+	motionblur_fbo1.deactivate_texture();
 	
 }
 
-static void		key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
+static void	key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
 	if (action == GLFW_PRESS || action == 2)
 	{
 		switch (key)
 		{
 		case GLFW_KEY_UP:
-			motionblur_properties.y += 0.01f;
+			camera.pitch_up(1.0f);
 			break;
 		case GLFW_KEY_DOWN:
-			motionblur_properties.y -= 0.01f;
+			camera.pitch_down(1.0f);
+			break;
+		case GLFW_KEY_RIGHT:
+			camera.yaw_right(1.0f);
+			break;
+		case GLFW_KEY_LEFT:
+			camera.yaw_left(1.0f);
 			break;
 		case GLFW_KEY_ESCAPE:
 		case GLFW_KEY_Q:
@@ -227,7 +283,7 @@ static void		key_callback(GLFWwindow* window, int key, int scancode, int action,
 
 int main()
 {
-	content.set_clear_color(WHITE);
+	content.set_clear_color(GREEN);
 	content.set_eye_pos(glm::vec3(0,0,-3));
 	content.run(draw_loop, init, key_callback);
 
