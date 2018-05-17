@@ -5,18 +5,6 @@
 #include <chrono>
 #include <thread>
 
-
-//Returns random float
-inline float		randf()
-{
-	return static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
-}
-
-//void printV(glm::vec3 v)
-//{
-//	printf("x: %f - y: %f - z: %f\n", v.x, v.y, v.z);
-//}
-
 //Error callback  
 static void		error_callback(int error, const char* description)
 {
@@ -24,20 +12,7 @@ static void		error_callback(int error, const char* description)
 	_fgetchar();
 }
 
-static void		key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
-{
-	if (action == GLFW_PRESS || action == 2)
-	{
-		switch (key)
-		{
 
-		case GLFW_KEY_ESCAPE:
-		case GLFW_KEY_Q:
-			glfwSetWindowShouldClose(window, GL_TRUE);
-			break;
-		}
-	}
-}
 
 struct GLContent
 {
@@ -123,7 +98,7 @@ private:
 		exit(EXIT_SUCCESS);
 	}
 	//GL window initialise
-	GLFWwindow *				initWindow(void(*init)())
+	GLFWwindow *				initWindow(void(*init)(), GLFWkeyfun key_func)
 	{
 		GLFWwindow * window;
 
@@ -159,7 +134,7 @@ private:
 		glfwMakeContextCurrent(window);
 
 		//Sets the key callback  
-		glfwSetKeyCallback(window, key_callback);
+		glfwSetKeyCallback(window, key_func);
 
 		printf("Initialising GLEW...\n");
 		//Initialize GLEW  
@@ -205,9 +180,9 @@ public:
 	}
 
 	
-	void run(void(*graphics_loop)(), void(*init)())
+	void run(void(*graphics_loop)(), void(*init)(), GLFWkeyfun key_func)
 	{
-		glLoop(graphics_loop, initWindow(init));
+		glLoop(graphics_loop, initWindow(init, key_func));
 	}
 
 	void loadPerspective()
@@ -275,6 +250,11 @@ public:
 	glm::vec2 get_window_size()
 	{
 		return window_size;
+	}
+
+	void set_eye_pos(glm::vec3 pos)
+	{
+		eye_pos = pos;
 	}
 
 };

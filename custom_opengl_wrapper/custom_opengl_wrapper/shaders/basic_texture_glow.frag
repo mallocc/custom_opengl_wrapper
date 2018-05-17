@@ -12,6 +12,7 @@ uniform mat4 u_v;
 uniform mat4 u_p;
 
 uniform sampler2D u_tex;
+
 uniform vec3 u_glow_res;
 
 out vec4 out_color;

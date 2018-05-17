@@ -25,12 +25,6 @@
     <Filter Include="Source Files\tiny_obj_loader">
       <UniqueIdentifier>{ddf16ebc-eead-4be0-af01-aed20dc328a6}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\OpenGL_Wrapper">
-      <UniqueIdentifier>{2f8f11eb-3546-4640-9e40-13a4617e7042}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Header Files\OpenGL_Wrapper">
-      <UniqueIdentifier>{b3614c0e-7117-4e62-b904-8e6f1b6c1454}</UniqueIdentifier>
-    </Filter>
     <Filter Include="shaders">
       <UniqueIdentifier>{2691a573-7d67-438b-8ca1-72acd489e6ca}</UniqueIdentifier>
     </Filter>
@@ -42,13 +36,7 @@
     <ClCompile Include="include\tiny_object_loader\tiny_obj_loader.cpp">
       <Filter>Source Files\tiny_obj_loader</Filter>
     </ClCompile>
-    <ClCompile Include="gl_wrapper.cpp">
-      <Filter>Source Files\OpenGL_Wrapper</Filter>
-    </ClCompile>
     <ClCompile Include="load_image.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Obj.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="tiny_obj_loader.cpp">
@@ -95,9 +83,6 @@
     <ClInclude Include="include\tiny_object_loader\tiny_obj_loader.h">
       <Filter>Header Files\tiny_obj_loader</Filter>
     </ClInclude>
-    <ClInclude Include="gl_wrapper.h">
-      <Filter>Header Files\OpenGL_Wrapper</Filter>
-    </ClInclude>
     <ClInclude Include="colors.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -119,9 +104,6 @@
     <ClInclude Include="load_image.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Obj.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="opengl.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -135,6 +117,15 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="vertex.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="entity.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="primitive_generators.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="gl_wrapper.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

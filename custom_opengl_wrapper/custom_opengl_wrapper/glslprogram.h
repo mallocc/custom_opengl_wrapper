@@ -26,7 +26,7 @@ private:
 
 	VarHandleID 
 		model_mat,
-		tex;
+		tex, tex1;
 
 	const char * TAG = "GLSLProgram";
 
@@ -189,6 +189,14 @@ public:
 		add_handle(handle);
 		return this;
 	}
+	GLSLProgram * set_tex1_handle()
+	{
+		VarHandle handle = VarHandle("u_tex1");
+		handle.init(ID);
+		tex1 = handle.get_handle_id();
+		add_handle(handle);
+		return this;
+	}
 
 	VarHandle * get_model_mat4_handle()
 	{
@@ -198,6 +206,11 @@ public:
 	VarHandle * get_tex_handle()
 	{
 		return get_handle(tex);
+	}
+
+	VarHandle * get_tex1_handle()
+	{
+		return get_handle(tex1);
 	}
 
 };

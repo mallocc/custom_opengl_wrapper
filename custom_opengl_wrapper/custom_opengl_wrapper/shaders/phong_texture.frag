@@ -21,9 +21,8 @@ uniform vec3 u_ambient_color;
 uniform vec3 u_light_color;
 
 uniform sampler2D u_tex;
-uniform sampler2D u_norm;
 
-
+out vec4 out_color;
 
 void main() 
 {
@@ -32,8 +31,7 @@ void main()
 	float u_specular_scale = u_light_properties.y;
 	float u_shininess = u_light_properties.z;
 
-	vec3 N = normalize(o_norm); //perturb(normalMap, normal, -V, vUv); //surface normal
-	vec3 V = normalize(o_v_pos);            //eye direction
+	vec3 N = normalize(o_norm);
 
 	//determine surface to light direction
 	vec4 lightPosition = u_v * vec4(u_light_pos, 1.0);
@@ -57,5 +55,5 @@ void main()
 	//final_color = dif;
 
 	// apply fragment color
-	gl_FragColor = vec4(final_color,1);
+	out_color = vec4(final_color,1);
 }
