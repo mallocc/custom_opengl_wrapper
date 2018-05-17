@@ -489,6 +489,30 @@ std::vector<glm::vec3>			random_intesity_colour_buffer(glm::vec3 colour, int n)
 	}
 	return v;
 }
+
+
+std::vector<glm::vec3>			load_model(const char * filename)
+{
+	std::vector<tinyobj::shape_t> shapes;
+	std::vector<tinyobj::material_t> materials;
+	std::vector< glm::vec3 > vertices;
+
+	std::string obj_err =
+		tinyobj::LoadObj(shapes, materials, filename, NULL);
+
+	printf("[%-11s]	   ERRORs       : [ %s ]\n", "MODEL_LOAD", obj_err);
+
+	for (int i = 0; i < shapes.size(); i++)
+		for (int j = 0; j < shapes[i].mesh.indices.size(); j++)
+			vertices.push_back(glm::vec3(
+				shapes[i].mesh.positions[shapes[i].mesh.indices[j] * 3],
+				shapes[i].mesh.positions[shapes[i].mesh.indices[j] * 3 + 1],
+				shapes[i].mesh.positions[shapes[i].mesh.indices[j] * 3 + 2]
+			));
+	return vertices;
+}
+
+
 // creates a vector of Vertices to pass to Obj
 std::vector<Vertex>				pack_object(
 	std::vector<glm::vec3> * v,

@@ -15,12 +15,9 @@ GLSLProgramManager program_manager;
 
 GLContent content;
 
-glm::vec3
-ambient_color;
-
 Entity
 screen_texture,
-sphere, stars;
+sphere, stars, bunny;
 
 FBO
 basic_fbo,
@@ -38,7 +35,7 @@ MIX_PROGRAM;
 
 Light light = { glm::vec3(0,5,-5), WHITE, glm::vec3(1,1,100) };
 
-glm::vec3 blur_properties, motionblur_properties;
+glm::vec3 blur_properties, motionblur_properties, ambient_color;
 
 //Returns random float
 inline float		randf()
@@ -54,23 +51,23 @@ void init()
 	//// CREATE GLSL PROGAMS
 	printf("\n");
 	printf("Initialising GLSL programs...\n");
-	BASIC_PROGRAM =
+	BASIC_PROGRAM         =
 		program_manager.add_program("shaders/basic.vert", "shaders/basic.frag",
-		content.get_model_mat(), content.get_view_mat(), content.get_proj_mat());
+			content.get_model_mat(), content.get_view_mat(), content.get_proj_mat());
 
-	PHONG_PROGRAM =
+	PHONG_PROGRAM         =
 		program_manager.add_program("shaders/phong.vert", "shaders/phong.frag",
 			content.get_model_mat(), content.get_view_mat(), content.get_proj_mat());
 
-	RENDER_PROGRAM =
+	RENDER_PROGRAM        =
 		program_manager.add_program("shaders/basic_texture.vert", "shaders/basic_texture.frag",
 			content.get_model_mat(), content.get_view_mat(), content.get_proj_mat());
 
-	BLUR_PROGRAM =
+	BLUR_PROGRAM          =
 		program_manager.add_program("shaders/basic_texture.vert", "shaders/basic_texture_glow.frag",
 			content.get_model_mat(), content.get_view_mat(), content.get_proj_mat());
 
-	MIX_PROGRAM =
+	MIX_PROGRAM           =
 		program_manager.add_program("shaders/basic_texture.vert", "shaders/combine.frag",
 			content.get_model_mat(), content.get_view_mat(), content.get_proj_mat());
 
@@ -111,14 +108,14 @@ void init()
 	//// CREATE FBOS
 	printf("\n");
 	printf("Creating FBOs...\n");
-	basic_fbo = FBO(content.get_window_size());
-	blur_fbo = FBO(content.get_window_size());
+	basic_fbo       = FBO(content.get_window_size());
+	blur_fbo        = FBO(content.get_window_size());
 	motionblur_fbo0 = FBO(content.get_window_size());
 	motionblur_fbo1 = FBO(content.get_window_size());
 	
 	//// ADD OBJECTS TO FBOS
-	basic_fbo.add_object(&sphere);
-	blur_fbo.add_object(&sphere);
+	basic_fbo.add_object(&bunny);
+	blur_fbo .add_object(&bunny);
 	basic_fbo.add_object(&stars);
 	
 	//// CREATE OBJECTS
@@ -160,6 +157,17 @@ void init()
 		glm::vec3(1, 0, 0),	glm::radians(90.0f),
 		glm::vec3(1, 1, 1) * 100.0f
 	);
+
+	v = load_model("objects/bunny.obj");
+
+	bunny = Entity(		
+		"",
+		pack_object(&v, GEN_ALL | GEN_COLOR_RAND, WHITE),
+		glm::vec3(0, 0, 0),
+		glm::vec3(1, 0, 0), glm::radians(0.0f),
+		glm::vec3(1, 0, 0), glm::radians(0.0f),
+		glm::vec3(1, 1, 1)
+	);
 }
 
 void physics()
@@ -179,21 +187,21 @@ void draw_loop()
 		*texture_handle,
 		*texture1_handle;
 
-	content.clearAll();
-	content.loadPerspective();
-	program_manager.load_program(PHONG_TEXTURE_PROGRAM);
-	model_mat_handle = program_manager.get_current_program()->get_model_mat4_handle();
-	texture_handle = program_manager.get_current_program()->get_tex_handle();
-	basic_fbo.binding_draw_objects(model_mat_handle, texture_handle);
+	content                            .clearAll();
+	content                            .loadPerspective();
+	program_manager                    .load_program(PHONG_TEXTURE_PROGRAM);
+	model_mat_handle = program_manager .get_current_program()->get_model_mat4_handle();
+	texture_handle   = program_manager .get_current_program()->get_tex_handle();
+	basic_fbo                          .binding_draw_objects(model_mat_handle, texture_handle);
 
-	content.clearAll();
-	content.loadOrtho();
-	program_manager.load_program(RENDER_PROGRAM);
-	model_mat_handle = program_manager.get_current_program()->get_model_mat4_handle();
-	texture_handle = program_manager.get_current_program()->get_tex_handle();
-	basic_fbo.activate_texture(texture_handle);
-	screen_texture.draw(0, model_mat_handle, nullptr);
-	basic_fbo.deactivate_texture();
+	content                            .clearAll();
+	content                            .loadOrtho();
+	program_manager                    .load_program(RENDER_PROGRAM);
+	model_mat_handle = program_manager .get_current_program()->get_model_mat4_handle();
+	texture_handle   = program_manager .get_current_program()->get_tex_handle();
+	basic_fbo                          .activate_texture(texture_handle);
+	screen_texture                     .draw(0, model_mat_handle, nullptr);
+	basic_fbo                          .deactivate_texture();
 	
 }
 
