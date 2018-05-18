@@ -165,7 +165,6 @@
     <ClCompile Include="include\tiny_object_loader\tiny_obj_loader.cpp" />
     <ClCompile Include="load_image.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="tiny_obj_loader.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="colors.h" />
@@ -194,7 +193,6 @@
     <ClInclude Include="primitive_generators.h" />
     <ClInclude Include="stb_image.h" />
     <ClInclude Include="textured_mesh.h" />
-    <ClInclude Include="tiny_obj_loader.h" />
     <ClInclude Include="varhandle.h" />
     <ClInclude Include="vertex.h" />
   </ItemGroup>

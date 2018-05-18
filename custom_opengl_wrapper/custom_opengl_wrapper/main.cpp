@@ -8,6 +8,7 @@
 #include "light.h"
 #include "mesh.h"
 #include "primitive_generators.h"
+#include "textured_mesh.h"
 
 #include <vector>;
 
@@ -46,7 +47,7 @@ float motionblur_alpha = 0.9f;
 float motionblur_scale = 1.0f;
 
 bool GLOW_ON = 1;
-bool BLUR_ON = 1;
+bool BLUR_ON = 10;
 
 //Returns random float
 inline float		randf()
