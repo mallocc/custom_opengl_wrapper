@@ -142,9 +142,6 @@
     <None Include="shaders\basic_texture.vert">
       <Filter>shaders</Filter>
     </None>
-    <None Include="shaders\basic_texture_glow.frag">
-      <Filter>shaders</Filter>
-    </None>
     <None Include="shaders\blueshift.frag">
       <Filter>shaders</Filter>
     </None>
@@ -193,7 +190,10 @@
     <None Include="shaders\render_to_texture2.frag">
       <Filter>shaders</Filter>
     </None>
-    <None Include="shaders\basic_texture2.frag">
+    <None Include="shaders\basic_texture_alpha.frag">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="shaders\basic_texture_blur.frag">
       <Filter>shaders</Filter>
     </None>
   </ItemGroup>

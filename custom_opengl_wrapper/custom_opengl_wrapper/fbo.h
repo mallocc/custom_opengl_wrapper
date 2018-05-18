@@ -14,7 +14,9 @@ private:
 
 	int w = 0, h = 0;
 
-	std::vector<Mesh*> entities;
+	std::vector<Mesh*> meshes;
+
+	Mesh * render_mesh;
 
 	const char * TAG = "FBO";
 
@@ -83,6 +85,11 @@ public:
 		getFrameBuffer(&id, &tex);
 	}
 
+	void set_render_mesh(Mesh * mesh)
+	{
+		render_mesh = mesh;
+	}
+
 	void bind()
 	{
 		glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, id);
@@ -112,22 +119,22 @@ public:
 		return tex;
 	}
 
-	void add_object(Mesh * e)
+	void add_mesh(Mesh * m)
 	{
-		entities.push_back(e);
+		meshes.push_back(m);
 	}
 
-	void draw_objects(VarHandle * model, VarHandle * tex)
+	void draw_meshes(VarHandle * model, VarHandle * tex)
 	{
-		for (Mesh * e : entities)
-			e->draw(0, model, tex);
+		for (Mesh * m : meshes)
+			m->draw(0, model, tex);
 	}
 
-	void binding_draw_objects(VarHandle * model, VarHandle * tex)
+	void binding_draw_meshes(VarHandle * model, VarHandle * tex)
 	{
 		bind();
-		for (Mesh * e : entities)
-			e->draw(0, model, tex);
+		for (Mesh * m : meshes)
+			m->draw(0, model, tex);
 		unbind();
 	}
 
@@ -142,6 +149,14 @@ public:
 		glActiveTexture(GL_TEXTURE0 + tex);
 		glBindTexture(GL_TEXTURE_2D, GL_TEXTURE0);
 	}
+
+	void draw_render_mesh(VarHandle * model_handle, VarHandle * texture_handle)
+	{
+		activate_texture(texture_handle);
+		render_mesh->draw(0, model_handle, nullptr);
+		deactivate_texture();
+	}
+
 };
 
 
