@@ -1,6 +1,6 @@
 #include <stdio.h>
 
-#include "gl_wrapper.h"
+#include "glcontent.h"
 
 #include "glslprogram.h"
 #include "colors.h"
@@ -13,6 +13,8 @@
 
 GLSLProgramManager program_manager;
 
+FBOManager fbo_manager;
+
 GLContent content;
 
 Camera camera = Camera(glm::vec3(0, 0, -3), glm::vec3(), glm::vec3(0,0,3), glm::vec3(0, 1, 0));
@@ -21,11 +23,11 @@ Mesh
 screen_texture,
 sphere, stars, bunny;
 
-FBO
+FBOID
 basic_fbo,
 blur_fbo,
-new_frame,
-old_frame;
+new_frame_fbo,
+old_frame_fbo;
 
 GLSLProgramID 
 BASIC_PROGRAM, 
@@ -62,27 +64,21 @@ void init()
 	BASIC_PROGRAM         =
 		program_manager.add_program("shaders/basic.vert", "shaders/basic.frag",
 			content.get_model_mat(), content.get_view_mat(), content.get_proj_mat());
-
 	PHONG_PROGRAM         =
 		program_manager.add_program("shaders/phong.vert", "shaders/phong.frag",
 			content.get_model_mat(), content.get_view_mat(), content.get_proj_mat());
-
 	RENDER_PROGRAM        =
 		program_manager.add_program("shaders/basic_texture.vert", "shaders/basic_texture.frag",
 			content.get_model_mat(), content.get_view_mat(), content.get_proj_mat());
-
 	RENDER_ALPHA_PROGRAM =
 		program_manager.add_program("shaders/basic_texture.vert", "shaders/basic_texture_alpha.frag",
 			content.get_model_mat(), content.get_view_mat(), content.get_proj_mat());
-
 	BLUR_PROGRAM          =
 		program_manager.add_program("shaders/basic_texture.vert", "shaders/basic_texture_blur.frag",
 			content.get_model_mat(), content.get_view_mat(), content.get_proj_mat());
-
 	MIX_PROGRAM           =
 		program_manager.add_program("shaders/basic_texture.vert", "shaders/combine.frag",
 			content.get_model_mat(), content.get_view_mat(), content.get_proj_mat());
-
 	PHONG_TEXTURE_PROGRAM =
 		program_manager.add_program("shaders/phong_texture.vert", "shaders/phong_texture.frag",
 			content.get_model_mat(), content.get_view_mat(), content.get_proj_mat());
@@ -96,7 +92,6 @@ void init()
 		->add_handle(VarHandle("u_eye_pos", content.get_eye_pos()))
 		->add_handle(VarHandle("u_light_pos", &light.pos))
 		->add_handle(VarHandle("u_light_properties", &light.brightness_specscale_shinniness));
-
 	program_manager.get_program(PHONG_TEXTURE_PROGRAM)
 		->set_tex_handle()
 		->add_handle(VarHandle("u_ambient_color", &ambient_color))
@@ -104,18 +99,14 @@ void init()
 		->add_handle(VarHandle("u_eye_pos", content.get_eye_pos()))
 		->add_handle(VarHandle("u_light_pos", &light.pos))
 		->add_handle(VarHandle("u_light_properties", &light.brightness_specscale_shinniness));
-
 	program_manager.get_program(RENDER_PROGRAM)
 		->set_tex_handle();
-
 	program_manager.get_program(RENDER_ALPHA_PROGRAM)
 		->set_tex_handle()
 		->add_handle(VarHandle("u_alpha", &motionblur_alpha));
-
 	program_manager.get_program(BLUR_PROGRAM)
 		->set_tex_handle()
 		->add_handle(VarHandle("u_glow_res", &blur_properties));
-
 	program_manager.get_program(MIX_PROGRAM)
 		->set_tex_handle()
 		->set_tex1_handle()
@@ -124,21 +115,17 @@ void init()
 	//// CREATE FBOS
 	printf("\n");
 	printf("Creating FBOs...\n");
-	basic_fbo       = FBO(content.get_window_size());
-	blur_fbo        = FBO(content.get_window_size());
-	new_frame = FBO(content.get_window_size());
-	old_frame = FBO(content.get_window_size());
+	basic_fbo           = fbo_manager.add_fbo(content.get_window_size(), &screen_texture);
+	blur_fbo            = fbo_manager.add_fbo(content.get_window_size(), &screen_texture);
+	new_frame_fbo       = fbo_manager.add_fbo(content.get_window_size(), &screen_texture);
+	old_frame_fbo       = fbo_manager.add_fbo(content.get_window_size(), &screen_texture);
 	
 	//// ADD OBJECTS TO FBOS
-	basic_fbo      .add_mesh(&bunny);
-	blur_fbo       .add_mesh(&bunny);
-	blur_fbo       .add_mesh(&stars);
-
-	//// SET FBO RENDER MESHES
-	basic_fbo      .set_render_mesh(&screen_texture);
-	blur_fbo       .set_render_mesh(&screen_texture);
-	new_frame.set_render_mesh(&screen_texture);
-	old_frame.set_render_mesh(&screen_texture);
+	fbo_manager.get_fbo(basic_fbo)
+		->add_mesh(&bunny);
+	fbo_manager.get_fbo(blur_fbo)
+		->add_mesh(&bunny)
+		->add_mesh(&stars);
 	
 	//// CREATE OBJECTS
 	printf("\n");
@@ -212,83 +199,83 @@ void draw_loop()
 		*texture1_handle;
 
 	// render normal meshes to fbo
-	content                            .clearAll();
-	content                            .loadPerspective();
-	program_manager                    .load_program(PHONG_TEXTURE_PROGRAM);
-	model_mat_handle = program_manager .get_current_program()->get_model_mat4_handle();
-	texture_handle   = program_manager .get_current_program()->get_tex_handle();
-	basic_fbo                          .binding_draw_meshes(model_mat_handle, texture_handle);
+	content                                    .clearAll();
+	content                                    .loadPerspective();
+	program_manager                            .load_program(PHONG_TEXTURE_PROGRAM);
+	model_mat_handle         = program_manager .get_current_program()->get_model_mat4_handle();
+	texture_handle           = program_manager .get_current_program()->get_tex_handle();
+	fbo_manager.get_fbo(basic_fbo)->binding_draw_meshes(model_mat_handle, texture_handle);
 
 	if (GLOW_ON)
 	{
 		// render blurred meshes to fbo
-		content.clearAll();
-		content.loadPerspective();
-		program_manager.load_program(RENDER_PROGRAM);
-		model_mat_handle = program_manager.get_current_program()->get_model_mat4_handle();
-		texture_handle = program_manager.get_current_program()->get_tex_handle();
-		blur_fbo.binding_draw_meshes(model_mat_handle, texture_handle);
+		content                                .clearAll();
+		content                                .loadPerspective();
+		program_manager                        .load_program(RENDER_PROGRAM);
+		model_mat_handle     = program_manager .get_current_program()->get_model_mat4_handle();
+		texture_handle       = program_manager .get_current_program()->get_tex_handle();
+		fbo_manager.get_fbo(blur_fbo)->binding_draw_meshes(model_mat_handle, texture_handle);
 
 		// render normal meshes over blur fbo, bind to normal fbo
-		basic_fbo.bind();
+		fbo_manager.get_fbo(basic_fbo)->bind();
 		{
-			content.clearAll();
-			content.loadOrtho();
-			program_manager.load_program(BLUR_PROGRAM);
-			model_mat_handle = program_manager.get_current_program()->get_model_mat4_handle();
-			texture_handle = program_manager.get_current_program()->get_tex_handle();
-			blur_fbo.draw_render_mesh(model_mat_handle, texture_handle);
+			content                            .clearAll();
+			content                            .loadOrtho();
+			program_manager                    .load_program(BLUR_PROGRAM);
+			model_mat_handle = program_manager .get_current_program()->get_model_mat4_handle();
+			texture_handle   = program_manager .get_current_program()->get_tex_handle();
+			fbo_manager.get_fbo(blur_fbo)->draw_render_mesh(model_mat_handle, texture_handle);
 
-			content.clearDepthBuffer();
-			content.loadPerspective();
-			program_manager.load_program(PHONG_TEXTURE_PROGRAM);
-			model_mat_handle = program_manager.get_current_program()->get_model_mat4_handle();
-			texture_handle = program_manager.get_current_program()->get_tex_handle();
-			basic_fbo.draw_meshes(model_mat_handle, texture_handle);
+			content                            .clearDepthBuffer();
+			content                            .loadPerspective();
+			program_manager                    .load_program(PHONG_TEXTURE_PROGRAM);
+			model_mat_handle = program_manager .get_current_program()->get_model_mat4_handle();
+			texture_handle   = program_manager .get_current_program()->get_tex_handle();
+			fbo_manager.get_fbo(basic_fbo)->draw_meshes(model_mat_handle, texture_handle);
 		}
-		basic_fbo.unbind();
+		fbo_manager.get_fbo(basic_fbo)->unbind();
 	}
 	// render old fbo over normal fbo, bind to new fbo
-	new_frame.bind();
+	fbo_manager.get_fbo(new_frame_fbo)->bind();
 	{
-		content.clearAll();
-		content.loadOrtho();
-		program_manager.load_program(RENDER_PROGRAM);
-		model_mat_handle = program_manager.get_current_program()->get_model_mat4_handle();
-		texture_handle = program_manager.get_current_program()->get_tex_handle();
-		basic_fbo.draw_render_mesh(model_mat_handle, texture_handle);
+		content                                .clearAll();
+		content                                .loadOrtho();
+		program_manager                        .load_program(RENDER_PROGRAM);
+		model_mat_handle     = program_manager .get_current_program()->get_model_mat4_handle();
+		texture_handle       = program_manager .get_current_program()->get_tex_handle();
+		fbo_manager.get_fbo(basic_fbo)->draw_render_mesh(model_mat_handle, texture_handle);
 
-		content.clearDepthBuffer();
-		content.loadOrtho();
-		program_manager.load_program(RENDER_ALPHA_PROGRAM);
-		model_mat_handle = program_manager.get_current_program()->get_model_mat4_handle();
-		texture_handle = program_manager.get_current_program()->get_tex_handle();
-		old_frame.draw_render_mesh(model_mat_handle, texture_handle);
+		content                                .clearDepthBuffer();
+		content                                .loadOrtho();
+		program_manager                        .load_program(RENDER_ALPHA_PROGRAM);
+		model_mat_handle     = program_manager .get_current_program()->get_model_mat4_handle();
+		texture_handle       = program_manager .get_current_program()->get_tex_handle();
+		fbo_manager.get_fbo(old_frame_fbo)->draw_render_mesh(model_mat_handle, texture_handle);
 	}
-	new_frame.unbind();
+	fbo_manager.get_fbo(new_frame_fbo)->unbind();
 
 	// render new to old fbo
-	old_frame.bind();
+	fbo_manager.get_fbo(old_frame_fbo)->bind();
 	{
-		content.clearAll();
-		content.loadOrtho();
-		program_manager.load_program(RENDER_PROGRAM);
-		model_mat_handle = program_manager.get_current_program()->get_model_mat4_handle();
-		texture_handle = program_manager.get_current_program()->get_tex_handle();
-		new_frame.draw_render_mesh(model_mat_handle, texture_handle);
+		content                                .clearAll();
+		content                                .loadOrtho();
+		program_manager                        .load_program(RENDER_PROGRAM);
+		model_mat_handle     = program_manager .get_current_program()->get_model_mat4_handle();
+		texture_handle       = program_manager .get_current_program()->get_tex_handle();
+		fbo_manager.get_fbo(new_frame_fbo)->draw_render_mesh(model_mat_handle, texture_handle);
 	}
-	old_frame.unbind();
+	fbo_manager.get_fbo(old_frame_fbo)->unbind();
 
 	// draw new fbo
-	content.clearAll();
-	content.loadOrtho();
-	program_manager.load_program(RENDER_PROGRAM);
-	model_mat_handle = program_manager.get_current_program()->get_model_mat4_handle();
-	texture_handle = program_manager.get_current_program()->get_tex_handle();
+	content                                    .clearAll();
+	content                                    .loadOrtho();
+	program_manager                            .load_program(RENDER_PROGRAM);
+	model_mat_handle         = program_manager .get_current_program()->get_model_mat4_handle();
+	texture_handle           = program_manager .get_current_program()->get_tex_handle();
 	if (BLUR_ON)
-		new_frame.draw_render_mesh(model_mat_handle, texture_handle);
+		fbo_manager.get_fbo(new_frame_fbo)->draw_render_mesh(model_mat_handle, texture_handle);
 	else
-		basic_fbo.draw_render_mesh(model_mat_handle, texture_handle);
+		fbo_manager.get_fbo(basic_fbo)->draw_render_mesh(model_mat_handle, texture_handle);
 }
 
 static void	key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)

@@ -125,7 +125,7 @@
     <ClInclude Include="primitive_generators.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="gl_wrapper.h">
+    <ClInclude Include="glcontent.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

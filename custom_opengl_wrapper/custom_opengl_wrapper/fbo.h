@@ -119,9 +119,15 @@ public:
 		return tex;
 	}
 
-	void add_mesh(Mesh * m)
+	FBOID get_fboid()
+	{
+		return id;
+	}
+
+	FBO * add_mesh(Mesh * m)
 	{
 		meshes.push_back(m);
+		return this;
 	}
 
 	void draw_meshes(VarHandle * model, VarHandle * tex)
@@ -162,6 +168,25 @@ public:
 
 struct FBOManager
 {
+private:
+	std::map<FBOID, FBO> fbos;
+
+public:
+
+	FBOManager() {}
+
+	FBOID add_fbo(glm::vec2 size, Mesh * render_mesh)
+	{
+		FBO fbo = FBO(size);
+		fbo.set_render_mesh(render_mesh);
+		fbos.insert({ fbo.get_fboid(), fbo });
+		return fbo.get_fboid();
+	}
+
+	FBO * get_fbo(FBOID id)
+	{
+		return &fbos[id];
+	}
 
 };
 
