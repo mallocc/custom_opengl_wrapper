@@ -6,7 +6,7 @@
 #include "colors.h"
 #include "fbo.h"
 #include "light.h"
-#include "entity.h"
+#include "mesh.h"
 #include "primitive_generators.h"
 
 #include <vector>;
@@ -43,9 +43,10 @@ Light light = { glm::vec3(0,5,-5), WHITE, glm::vec3(1,1,100) };
 glm::vec3 blur_properties, motionblur_properties, ambient_color;
 
 float motionblur_alpha = 0.9f;
+float motionblur_scale = 1.0f;
 
-bool GLOW_ON = 0;
-bool BLUR_ON = 0;
+bool GLOW_ON = 1;
+bool BLUR_ON = 1;
 
 //Returns random float
 inline float		randf()
@@ -291,6 +292,16 @@ static void	key_callback(GLFWwindow* window, int key, int scancode, int action, 
 			break;
 		case GLFW_KEY_LEFT:
 			camera.yaw_left(1.0f);
+			break;
+
+		case GLFW_KEY_O:
+			motionblur_scale++;
+			motionblur_alpha = -1 / (1 + motionblur_scale) + 1;
+			break;
+		case GLFW_KEY_P:
+			motionblur_scale--;
+			motionblur_scale = max(motionblur_scale, 0.0f);
+			motionblur_alpha = -1 / (1 + motionblur_scale) + 1;
 			break;
 
 		case GLFW_KEY_B:

@@ -169,7 +169,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="colors.h" />
-    <ClInclude Include="entity.h" />
+    <ClInclude Include="mesh.h" />
     <ClInclude Include="fbo.h" />
     <ClInclude Include="glm.h" />
     <ClInclude Include="glslprogram.h" />
@@ -193,6 +193,7 @@
     <ClInclude Include="opengl.h" />
     <ClInclude Include="primitive_generators.h" />
     <ClInclude Include="stb_image.h" />
+    <ClInclude Include="textured_mesh.h" />
     <ClInclude Include="tiny_obj_loader.h" />
     <ClInclude Include="varhandle.h" />
     <ClInclude Include="vertex.h" />

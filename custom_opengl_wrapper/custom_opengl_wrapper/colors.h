@@ -2,7 +2,7 @@
 
 #include "glm.h"
 
-//colours
+//define colors as VEC3s
 glm::vec3
 
 WHITE(1, 1, 1),
