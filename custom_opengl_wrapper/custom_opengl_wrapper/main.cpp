@@ -134,7 +134,6 @@ void init()
 	std::vector<glm::vec3> v;
 
 	v = generate_square_mesh(1, 1);
-
 	screen_texture = Mesh(
 		"",
 		pack_object(&v, GEN_UVS_RECTS, BLACK),
@@ -146,7 +145,6 @@ void init()
 
 	int res = 200;
 	v = generate_sphere(res, res);
-
 	sphere = Mesh(
 		"textures/mars.jpg",
 		pack_object(&v, GEN_UVS_SPHERE | GEN_NORMS, WHITE),
@@ -157,7 +155,6 @@ void init()
 	);
 
 	v = generate_sphere_invert(20, 20);
-
 	stars = Mesh(
 		"textures/back.jpg",
 		pack_object(&v, GEN_UVS_SPHERE | GEN_NORMS, BLACK),
@@ -168,7 +165,6 @@ void init()
 	);
 
 	v = load_model("objects/bunny.obj");
-
 	bunny = Mesh(		
 		"textures/197.bmp",
 		pack_object(&v, GEN_ALL, WHITE),

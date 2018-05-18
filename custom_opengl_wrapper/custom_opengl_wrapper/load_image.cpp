@@ -1,7 +1,7 @@
 #include "load_image.h"
 
 #define STB_IMAGE_IMPLEMENTATION
-#include "stb_image/stb_image.h"
+#include <stb_image.h>
 
 // loads an image into a gl texture
 GLuint load_texture_from_image(const char *fname)
