@@ -22,5 +22,5 @@ void main()
 	//vec3 final_color = (o_color + texture2D(u_tex,o_uv).rgb);
 
 // apply fragment color
-	out_color = vec4(final_color,u_alpha);
+	out_color = vec4(texture2D(u_tex,o_uv).rgb,u_alpha);
 }

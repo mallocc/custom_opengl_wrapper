@@ -8,7 +8,6 @@
 #include "light.h"
 #include "mesh.h"
 #include "primitive_generators.h"
-#include "textured_mesh.h"
 
 #include <vector>;
 
