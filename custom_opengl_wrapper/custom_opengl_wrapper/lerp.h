@@ -3,6 +3,7 @@
 
 #include "glm.h"
 #include <minmax.h>
+#include <vector>
 
 
 
@@ -124,69 +125,68 @@ public:
 
 struct BezierLerper : Lerper
 {
-	//Lerper line1, line2;
+	glm::vec3 c1, c2;
 
-	//BezierLerper(glm::vec3 start, glm::vec3 control, glm::vec3 end, float step, float wait)
-	//{
-	//	line1 = Lerper(start, control, step, wait);
-	//	line2 = Lerper(control, end, step, wait);
-	//}
+	BezierLerper() {}
 
-	//glm::vec3 lerpStepSmooth()
-	//{
-	//	if (!line1.isFinished())
-	//	{
-	//		glm::vec3 p1 = line1.lerpStepSmooth();
-	//		glm::vec3 p2 = line2.lerpStepSmooth();
-	//		return p1 + (p2 - p1) * smoothstep(0,1,line1.t);
-	//	}
-	//	return line2.getEnd();
-	//}
+	BezierLerper(glm::vec3 start, glm::vec3 end, glm::vec3 c1, glm::vec3 c2, float step)
+	{
+		this->start = start;
+		this->c1 = c1;
+		this->c2 = c2;
+		this->end = end;
+		this->step = step;
+	}
+	BezierLerper(glm::vec3 start, glm::vec3 end, glm::vec3 c1, glm::vec3 c2, float step, float wait)
+	{
+		this->start = start;
+		this->c1 = c1;
+		this->c2 = c2;
+		this->end = end;
+		this->step = step;
+		this->wait = wait;
+	}
 
-	//glm::vec3 lerpSmooth()
-	//{
-	//	if (!line1.isFinished())
-	//	{
-	//		glm::vec3 p1 = line1.lerpStep();
-	//		glm::vec3 p2 = line2.lerpStep();
-	//		return p1 + (p2 - p1) * line1.t;
-	//	}
-	//	line1.stepWait();
-	//	line2.stepWait();
-	//	return line2.getEnd();
-	//}
+	glm::vec3 lerpStepSmooth(float step)
+	{
+		if (t < 1)
+		{
+			t += step;
+			float t1 = smoothstep(0, 1, t);
+			float ti = 1 - t1;
+			float t2 = t1*t1;
+			float t3 = t2 * t1;
+			return pow(ti, 3) * start + 3 * pow(ti, 2)*t*c1 + 3 * (ti)*t2*c2 + t3*end;
+		}
+		stepWait(step);
+		return end;
+	}
 
-	//bool isFinished()
-	//{
-	//	return line1.isFinished() && line2.isFinished();
-	//}
+	glm::vec3 lerpStep(float step)
+	{
+		if (t < 1)
+		{
+			t += step;
+			float t1 = t;
+			float ti = 1 - t1;
+			float t2 = t1*t1;
+			float t3 = t2 * t1;
+			return pow(ti, 3) * start + 3 * pow(ti, 2)*t*c1 + 3 * (ti)*t2*c2 + t3*end;
+		}
+		stepWait(step);
+		return end;
+	}
 
-	//glm::vec3 getStart()
-	//{
-	//	return line1.getStart();
-	//}
+	
+	glm::vec3 lerpStepSmooth()
+	{
+		return lerpStepSmooth(step);
+	}
 
-	//glm::vec3 getEnd()
-	//{
-	//	return line2.getEnd();
-	//}
-
-	//float getStep()
-	//{
-	//	return line1.getStep();
-	//}
-
-	//float getWait()
-	//{
-	//	return line1.getWait();
-	//}
-
-	//void reset()
-	//{
-	//	line1.reset();
-	//	line2.reset();
-	//}
-
+	glm::vec3 lerpStep()
+	{
+		return lerpStep(step);
+	}
 };
 
 

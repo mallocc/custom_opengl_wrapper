@@ -133,11 +133,16 @@ private:
 
 	glm::mat4 getOrtho()
 	{
-		return glm::perspective(glm::radians(60.0f), 1.0f, 0.1f, 10.0f);
+		return glm::ortho(0.0f, window_size.x, window_size.y, 0.0f, -1.0f, 1.0f);
+		//return glm::perspective(glm::radians(1.0f), 1.0f, 0.1f, 100.0f * window_size.x);
 	}
 	glm::mat4 getOrthoView()
 	{
-		return glm::lookAt(glm::vec3(-0.866, 0, 0), glm::vec3(), glm::vec3(0, 1, 0));
+		return glm::mat4(1.0f);
+		/*return glm::lookAt(
+			glm::vec3(0.5f * window_size.x, 0.5f * window_size.y, 57.28996f * window_size.x), 
+			glm::vec3(0.5f * window_size.x, 0.5f * window_size.y, 0), 
+			glm::vec3(0, 1, 0));*/
 	}
 	glm::mat4 getPerspective()
 	{

@@ -262,13 +262,13 @@ std::vector<glm::vec2>			generate_uv_rects(int w, int h)
 {
 	glm::vec2
 		s = glm::vec2(1 / (float)w, 1 / (float)h),
-		a = glm::vec2(1, 1) * s,
-		b = glm::vec2(1, -1) * s,
-		c = glm::vec2(-1, -1) * s,
-		d = glm::vec2(-1, 1) * s;
+		a = glm::vec2(0, 0) * s,
+		b = glm::vec2(0, 1) * s,
+		c = glm::vec2(1, 1) * s,
+		d = glm::vec2(1, 0) * s;
 	std::vector<glm::vec2> n;
-	for (int x = 0; x < w; ++x)
-		for (int y = 0; y < h; ++y)
+	for (int y = 0; y < h; ++y)
+		for (int x = 0; x < w; ++x)
 		{
 			glm::vec2 t = s * glm::vec2(x, y);
 			n.push_back(a + t);
@@ -390,20 +390,43 @@ std::vector<glm::vec3>			generate_terrain_sphere(std::vector<glm::vec3> v, std::
 	}
 	return V;
 }
-std::vector<glm::vec3>			generate_square_mesh(int w, int h)
+std::vector<glm::vec3>			generate_centered_square_mesh(int w, int h)
 {
 	glm::vec3
-		s = glm::vec3(1 / (float)w, 0, 1 / (float)h),
+		s = glm::vec3(1 / (float)w, 1 / (float)h, 0),
 		a = glm::vec3(0, 0, 0) * s,
-		b = glm::vec3(0, 0, 1) * s,
-		c = glm::vec3(1, 0, 1) * s,
+		b = glm::vec3(0, 1, 0) * s,
+		c = glm::vec3(1, 1, 0) * s,
 		d = glm::vec3(1, 0, 0) * s;
 	std::vector<glm::vec3> n;
 
 	for (int y = 0; y < h; ++y)
 		for (int x = 0; x < w; ++x)
 		{
-			glm::vec3 t = s * glm::vec3(x, 0, y) - glm::vec3(0.5f, 0, 0.5f);
+			glm::vec3 t = s * glm::vec3(x, y, 0) - glm::vec3(0.5f, 0.5f, 0);
+			n.push_back(a + t);
+			n.push_back(b + t);
+			n.push_back(c + t);
+			n.push_back(c + t);
+			n.push_back(d + t);
+			n.push_back(a + t);
+		}
+	return n;
+}
+std::vector<glm::vec3>			generate_square_mesh(int w, int h)
+{
+	glm::vec3
+		s = glm::vec3(1 / (float)w, 1 / (float)h, 0),
+		a = glm::vec3(0, 0, 0) * s,
+		b = glm::vec3(0, 1, 0) * s,
+		c = glm::vec3(1, 1, 0) * s,
+		d = glm::vec3(1, 0, 0) * s;
+	std::vector<glm::vec3> n;
+
+	for (int y = 0; y < h; ++y)
+		for (int x = 0; x < w; ++x)
+		{
+			glm::vec3 t = s * glm::vec3(x, y, 0);
 			n.push_back(a + t);
 			n.push_back(b + t);
 			n.push_back(c + t);

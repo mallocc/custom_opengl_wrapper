@@ -125,6 +125,9 @@
     <ClInclude Include="mesh.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="save_image.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\basic.frag">
@@ -191,6 +194,12 @@
       <Filter>shaders</Filter>
     </None>
     <None Include="shaders\basic_texture_blur.frag">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="shaders\mandle.frag">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="shaders\mandle.vert">
       <Filter>shaders</Filter>
     </None>
   </ItemGroup>
