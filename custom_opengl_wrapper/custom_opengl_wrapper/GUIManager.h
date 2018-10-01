@@ -13,6 +13,11 @@
 
 #define GFX_NULLPTR NULL
 #define GFX_NULL_ID -1
+#define GFX_RESIZE_NULL 0
+#define GFX_RESIZE_LEFT 1
+#define GFX_RESIZE_TOP 2
+#define GFX_RESIZE_RIGHT 3
+#define GFX_RESIZE_BOTTOM 4
 
 namespace gfx
 {
@@ -713,9 +718,25 @@ namespace gfx
 					m_container->setPos(m_pos);
 				}
 
-				if (m_resizing)
+				if (m_resizingDir != GFX_RESIZE_NULL)
 				{
-				
+					glm::vec2 delta = content->getMouseDelta();
+					switch (m_resizingDir)
+					{
+					case GFX_RESIZE_LEFT:						
+						m_pos.x += delta.x;
+						m_size.x -= delta.x;
+						break;
+					case GFX_RESIZE_RIGHT:
+						m_size.x += delta.x;
+						break;
+					case GFX_RESIZE_BOTTOM:
+						m_pos.y += delta.y;
+						m_size.y -= delta.y;
+						break;
+					}
+
+					validate();
 				}
 
 				m_container->update(content);
@@ -911,24 +932,24 @@ namespace gfx
 				if (m_onDragging)
 				{
 					glm::vec2 mousePos = getRelativeMousePos(content);
-
-					if (mousePos.x >= 0 && mousePos.x <= 5 && mousePos.y >= 0 && mousePos.y >= m_size.y)
-					{
-						glm::vec2 delta = content->getMouseDelta();
-						m_pos.x -= delta.x;
-						m_size.x += delta.x;
-						validate();
-						m_resizing = true;
-					}
+					float deadzone = 10;
+					if (mousePos.x >= 0 && mousePos.x <= deadzone && mousePos.y >= 0 && mousePos.y <= m_size.y)
+						m_resizingDir = GFX_RESIZE_LEFT;
+					else if (mousePos.x >= -deadzone + m_size.x && mousePos.x <= m_size.x && mousePos.y >= 0 && mousePos.y <= m_size.y)
+						m_resizingDir = GFX_RESIZE_RIGHT;
+					else if (mousePos.x >= 0 && mousePos.x <= m_size.x && mousePos.y >= 0 && mousePos.y <= deadzone)
+						m_resizingDir = GFX_RESIZE_BOTTOM;
+					else
+						m_resizingDir = GFX_RESIZE_NULL;
 
 					callTrigger(&GFXWindow::onResize);
 				}
 				else
-					m_resizing = false;
+					m_resizingDir = GFX_RESIZE_NULL;
 			}
 		protected:
 			bool m_windowMoving = false;
-			bool m_resizing = false;
+			int m_resizingDir = GFX_RESIZE_NULL;
 			bool m_maximised = false;
 			glm::vec2 m_oldPos;
 			glm::vec2 m_oldSize;
