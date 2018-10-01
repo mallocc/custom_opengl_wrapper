@@ -162,17 +162,46 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="BezierLerper.cpp" />
+    <ClCompile Include="CameraSequencer.cpp" />
+    <ClCompile Include="FBO.cpp" />
+    <ClCompile Include="FBOManager.cpp" />
+    <ClCompile Include="GLCamera.cpp" />
+    <ClCompile Include="GLContent.cpp" />
+    <ClCompile Include="GLSLProgram.cpp" />
+    <ClCompile Include="GLSLProgramManager.cpp" />
     <ClCompile Include="include\tiny_object_loader\tiny_obj_loader.cpp" />
-    <ClCompile Include="load_image.cpp" />
+    <ClCompile Include="ImageLoader.cpp" />
+    <ClCompile Include="Lerper.cpp" />
+    <ClCompile Include="LerperSequencer.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Mesh.cpp" />
+    <ClCompile Include="PrimativeGenerator.cpp" />
+    <ClCompile Include="TexturedMesh.cpp" />
+    <ClCompile Include="VarHandle.cpp" />
+    <ClCompile Include="VarHandleManager.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="BezierLerper.h" />
+    <ClInclude Include="CameraSequencer.h" />
     <ClInclude Include="colors.h" />
-    <ClInclude Include="mesh.h" />
-    <ClInclude Include="fbo.h" />
+    <ClInclude Include="CLog.h" />
+    <ClInclude Include="FBOManager.h" />
+    <ClInclude Include="GFXLinker.h" />
+    <ClInclude Include="GFXMesh.h" />
+    <ClInclude Include="GLCamera.h" />
+    <ClInclude Include="GLSLProgramManager.h" />
+    <ClInclude Include="FLog.h" />
+    <ClInclude Include="GUIManager.h" />
+    <ClInclude Include="KeyboardEvents.h" />
+    <ClInclude Include="StringFormat.h" />
+    <ClInclude Include="TypeFactory.h" />
+    <ClInclude Include="LerperSequencer.h" />
+    <ClInclude Include="Mesh.h" />
+    <ClInclude Include="FBO.h" />
     <ClInclude Include="glm.h" />
-    <ClInclude Include="glslprogram.h" />
-    <ClInclude Include="glcontent.h" />
+    <ClInclude Include="GLSLProgram.h" />
+    <ClInclude Include="GLContent.h" />
     <ClInclude Include="include\gl\glew\glew-2.1.0\include\GL\eglew.h" />
     <ClInclude Include="include\gl\glew\glew-2.1.0\include\GL\glew.h" />
     <ClInclude Include="include\gl\glew\glew-2.1.0\include\GL\glxew.h" />
@@ -186,24 +215,29 @@
     <ClInclude Include="include\stb_image\stb_image_write.h" />
     <ClInclude Include="include\stb_image\stb_perlin.h" />
     <ClInclude Include="include\tiny_object_loader\tiny_obj_loader.h" />
-    <ClInclude Include="lerp.h" />
-    <ClInclude Include="light.h" />
-    <ClInclude Include="load_image.h" />
+    <ClInclude Include="Lerper.h" />
+    <ClInclude Include="ImageLoader.h" />
     <ClInclude Include="opengl.h" />
-    <ClInclude Include="primitive_generators.h" />
-    <ClInclude Include="save_image.h" />
+    <ClInclude Include="PrimativeGenerator.h" />
+    <ClInclude Include="ImageCreator.h" />
+    <ClInclude Include="ShadowMapper.h" />
     <ClInclude Include="stb_image.h" />
-    <ClInclude Include="textured_mesh.h" />
-    <ClInclude Include="varhandle.h" />
-    <ClInclude Include="vertex.h" />
+    <ClInclude Include="TexturedMesh.h" />
+    <ClInclude Include="Types.h" />
+    <ClInclude Include="VarHandle.h" />
+    <ClInclude Include="VarHandleManager.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\basic.frag" />
     <None Include="shaders\basic.vert" />
+    <None Include="shaders\basic_gui.frag" />
+    <None Include="shaders\basic_gui.vert" />
     <None Include="shaders\basic_texture.frag" />
     <None Include="shaders\basic_texture.vert" />
     <None Include="shaders\basic_texture_alpha.frag" />
     <None Include="shaders\basic_texture_blur.frag" />
+    <None Include="shaders\basic_texture_gui.frag" />
+    <None Include="shaders\basic_texture_gui.vert" />
     <None Include="shaders\blueshift.frag" />
     <None Include="shaders\combine.frag" />
     <None Include="shaders\complex.frag" />
@@ -218,10 +252,14 @@
     <None Include="shaders\phong_texture.vert" />
     <None Include="shaders\phong_texture_normals.frag" />
     <None Include="shaders\phong_texture_normals.vert" />
+    <None Include="shaders\refraction.frag" />
+    <None Include="shaders\refraction.vert" />
     <None Include="shaders\render_to_texture _glow.frag" />
     <None Include="shaders\render_to_texture.frag" />
     <None Include="shaders\render_to_texture.vert" />
     <None Include="shaders\render_to_texture2.frag" />
+    <None Include="shaders\shadowmap.frag" />
+    <None Include="shaders\shadowmap.vert" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

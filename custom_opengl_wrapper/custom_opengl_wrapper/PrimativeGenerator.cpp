@@ -1,92 +1,39 @@
-#pragma once
-#include "opengl.h"
-#include "glm.h"
-#include <math.h>  
-#include <minmax.h>
-#define STB_PERLIN_IMPLEMENTATION
-#include <stb_perlin.h>
-#define TINYOBJLOADER_IMPLEMENTATION
-#include <tiny_obj_loader.h>
+#include "PrimativeGenerator.h"
+#include "Types.h"
+#include "StringFormat.h"
+#include "CLog.h"
 
-#include "vertex.h"
-#include "load_image.h"
+using gfx::PrimativeGenerator;
 
-#define GEN_NORMS 0x1
-#define GEN_TANGS 0x2
-#define GEN_UVS_POLAR 0x4
-#define GEN_UVS_RECTS 0x8
-#define GEN_UVS_SPHERE 0x80
-#define GEN_MAP_HEIGHTS 0x100
-#define GEN_ALL (GEN_NORMS | GEN_TANGS | GEN_UVS_POLAR)
-#define GEN_COLOR 0x10
-#define GEN_COLOR_RAND 0x20
-#define GEN_COLOR_RAND_I 0x40
-#define GEN_DEFAULT (GEN_NORMS | GEN_COLOR)
+namespace
+{
+	const char * CLASSNAME = "PrimativeGenerator";
+}
 
 // converts cartesian to polar
-glm::vec2 cart_polar(glm::vec3 v)
+ glm::vec2 PrimativeGenerator::cart_polar(glm::vec3 v)
 {
 	float r = sqrt(v.x*v.x + v.y*v.y + v.z*v.z);
 	return glm::vec2(atan(v.y / v.x), acos(v.z / r));
 }
 // converts polar to cartesian
-glm::vec3 polar_cart(float theta, float phi)
+ glm::vec3 PrimativeGenerator::polar_cart(float theta, float phi)
 {
 	return glm::vec3(cos(theta)*cos(phi), cos(theta) * sin(phi), sin(theta));
 }
 //Returns random float
-inline float		pg_randf()
+ float		PrimativeGenerator::pg_randf()
 {
 	return static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
 }
-float Dot(glm::vec3 a, glm::vec3 b)
+ float PrimativeGenerator::Dot(glm::vec3 a, glm::vec3 b)
 {
 	return a.x * b.x + a.y * b.y + a.z * b.z;
 }
 
-//Cube vertex data array
-GLfloat cube_v_b[] = {
-	-1.0f,-1.0f,-1.0f, // triangle 1 : begin
-	-1.0f,-1.0f, 1.0f,
-	-1.0f, 1.0f, 1.0f, // triangle 1 : end
-	1.0f, 1.0f,-1.0f, // triangle 2 : begin
-	-1.0f,-1.0f,-1.0f,
-	-1.0f, 1.0f,-1.0f, // triangle 2 : end
-	1.0f,-1.0f, 1.0f,
-	-1.0f,-1.0f,-1.0f,
-	1.0f,-1.0f,-1.0f,
-	1.0f, 1.0f,-1.0f,
-	1.0f,-1.0f,-1.0f,
-	-1.0f,-1.0f,-1.0f,
-	-1.0f,-1.0f,-1.0f,
-	-1.0f, 1.0f, 1.0f,
-	-1.0f, 1.0f,-1.0f,
-	1.0f,-1.0f, 1.0f,
-	-1.0f,-1.0f, 1.0f,
-	-1.0f,-1.0f,-1.0f,
-	-1.0f, 1.0f, 1.0f,
-	-1.0f,-1.0f, 1.0f,
-	1.0f,-1.0f, 1.0f,
-	1.0f, 1.0f, 1.0f,
-	1.0f,-1.0f,-1.0f,
-	1.0f, 1.0f,-1.0f,
-	1.0f,-1.0f,-1.0f,
-	1.0f, 1.0f, 1.0f,
-	1.0f,-1.0f, 1.0f,
-	1.0f, 1.0f, 1.0f,
-	1.0f, 1.0f,-1.0f,
-	-1.0f, 1.0f,-1.0f,
-	1.0f, 1.0f, 1.0f,
-	-1.0f, 1.0f,-1.0f,
-	-1.0f, 1.0f, 1.0f,
-	1.0f, 1.0f, 1.0f,
-	-1.0f, 1.0f, 1.0f,
-	1.0f,-1.0f, 1.0f
-};
+//shape generators non indexed triangles
 
-///shape generators non indexed triangles
-
-std::vector<glm::vec3>			subdivide(std::vector<glm::vec3> v)
+ std::vector<glm::vec3>			PrimativeGenerator::subdivide(std::vector<glm::vec3> v)
 {
 	std::vector<glm::vec3> nv;
 	for (int i = 0; i < v.size(); i += 3)
@@ -108,14 +55,14 @@ std::vector<glm::vec3>			subdivide(std::vector<glm::vec3> v)
 	return nv;
 }
 
-std::vector<glm::vec3>			generate_cube()
+ std::vector<glm::vec3>			PrimativeGenerator::generate_cube()
 {
 	std::vector<glm::vec3> v;
 	for (int i = 0; i < 36; i++)
-		v.push_back(glm::vec3(cube_v_b[i * 3], cube_v_b[i * 3 + 1], cube_v_b[i * 3 + 2]));
+		v.push_back(glm::vec3(CUBE_V_B[i * 3], CUBE_V_B[i * 3 + 1], CUBE_V_B[i * 3 + 2]));
 	return v;
 }
-std::vector<glm::vec3>			generate_cone(int k)
+ std::vector<glm::vec3>			PrimativeGenerator::generate_cone(int k)
 {
 	std::vector<glm::vec3> v;
 	float step = 2.0f * 3.141596f / float(k);
@@ -145,7 +92,26 @@ std::vector<glm::vec3>			generate_cone(int k)
 	}
 	return v;
 }
-std::vector<glm::vec3>			generate_cylinder(int k, float len)
+
+ std::vector<glm::vec3>			PrimativeGenerator::generate_circle(int k)
+ {
+	 std::vector<glm::vec3> v;
+	 float step = 2.0f * 3.141596f / float(k);
+	 float c = 0.0f, s = 0.0f;
+	 float len = 0.0f;
+	 for (float a = 0; a <= (2.0f * 3.141596f); a += step)
+	 {
+		 c = cos(a - step);
+		 s = sin(a - step);
+		 v.push_back(glm::vec3(c, s, len));
+		 c = cos(a);
+		 s = sin(a);
+		 v.push_back(glm::vec3(c, s, len));
+		 v.push_back(glm::vec3(0.0f, 0.0f, len));
+	 }
+	 return v;
+ }
+ std::vector<glm::vec3>			PrimativeGenerator::generate_cylinder(int k, float len)
 {
 	std::vector<glm::vec3> v;
 	glm::vec3 t1, t2;
@@ -189,7 +155,7 @@ std::vector<glm::vec3>			generate_cylinder(int k, float len)
 	}
 	return v;
 }
-std::vector<glm::vec3>			generate_sphere(int lats, int longs)
+ std::vector<glm::vec3>			PrimativeGenerator::generate_sphere(int lats, int longs)
 {
 	std::vector<glm::vec3> v;
 	float step_lats = glm::radians(360.0f) / float(lats);
@@ -207,7 +173,7 @@ std::vector<glm::vec3>			generate_sphere(int lats, int longs)
 		}
 	return v;
 }
-std::vector<glm::vec3>			generate_sphere_invert(int lats, int longs)
+ std::vector<glm::vec3>			PrimativeGenerator::generate_sphere_invert(int lats, int longs)
 {
 	std::vector<glm::vec3> v;
 	float step_lats = glm::radians(360.0f) / float(lats);
@@ -225,7 +191,7 @@ std::vector<glm::vec3>			generate_sphere_invert(int lats, int longs)
 		}
 	return v;
 }
-std::vector<glm::vec3>			generate_rect()
+ std::vector<glm::vec3>			PrimativeGenerator::generate_rect()
 {
 	std::vector<glm::vec3> n;
 	n.push_back(glm::vec3(1, 0, 1));
@@ -236,7 +202,7 @@ std::vector<glm::vec3>			generate_rect()
 	n.push_back(glm::vec3(1, 0, 1));
 	return n;
 }
-std::vector<glm::vec3>			generate_rects(int w, int h)
+ std::vector<glm::vec3>			PrimativeGenerator::generate_rects(int w, int h)
 {
 	glm::vec3
 		s = glm::vec3(1 / (float)w, 0, 1 / (float)h),
@@ -258,7 +224,7 @@ std::vector<glm::vec3>			generate_rects(int w, int h)
 		}
 	return n;
 }
-std::vector<glm::vec2>			generate_uv_rects(int w, int h)
+ std::vector<glm::vec2>			PrimativeGenerator::generate_uv_rects(int w, int h)
 {
 	glm::vec2
 		s = glm::vec2(1 / (float)w, 1 / (float)h),
@@ -280,7 +246,7 @@ std::vector<glm::vec2>			generate_uv_rects(int w, int h)
 		}
 	return n;
 }
-std::vector<glm::vec2>			generate_null_uvs(int n)
+ std::vector<glm::vec2>			PrimativeGenerator::generate_null_uvs(int n)
 {
 	std::vector<glm::vec2> uv;
 	for (int i = 0; i < n; i++)
@@ -288,7 +254,7 @@ std::vector<glm::vec2>			generate_null_uvs(int n)
 	return uv;
 }
 // generates normals from every triangle
-std::vector<glm::vec3>			generate_normals(std::vector<glm::vec3> v)
+ std::vector<glm::vec3>			PrimativeGenerator::generate_normals(std::vector<glm::vec3> v)
 {
 	std::vector<glm::vec3> n;
 	for (int i = 0; i < v.size(); i += 3)
@@ -299,7 +265,7 @@ std::vector<glm::vec3>			generate_normals(std::vector<glm::vec3> v)
 	}
 	return n;
 }
-std::vector<glm::vec3>			generate_map_heights_from_uvs(std::vector<glm::vec3> v, std::vector<glm::vec3> n, std::vector<glm::vec2> uv, image_data * image, float k)
+ std::vector<glm::vec3>			PrimativeGenerator::generate_map_heights_from_uvs(std::vector<glm::vec3> v, std::vector<glm::vec3> n, std::vector<glm::vec2> uv, alib::ImageData_T * image, float k)
 {
 	std::vector<glm::vec3> V;
 	for (int i = 0; i < v.size(); i += 3)
@@ -321,7 +287,7 @@ std::vector<glm::vec3>			generate_map_heights_from_uvs(std::vector<glm::vec3> v,
 	return V;
 }
 // generates a second normal (tangent) for every normal (used for normal mapping)
-std::vector<glm::vec3>			generate_tangents(std::vector<glm::vec3> v)
+ std::vector<glm::vec3>			PrimativeGenerator::generate_tangents(std::vector<glm::vec3> v)
 {
 	std::vector<glm::vec3> n;
 	for (int i = 0; i < v.size(); i += 6)
@@ -333,14 +299,14 @@ std::vector<glm::vec3>			generate_tangents(std::vector<glm::vec3> v)
 	return n;
 }
 // generates uvs from converted carts to polar
-std::vector<glm::vec2>			generate_polar_uvs(std::vector<glm::vec3> v)
+ std::vector<glm::vec2>			PrimativeGenerator::generate_polar_uvs(std::vector<glm::vec3> v)
 {
 	std::vector<glm::vec2> uv;
 	for (int i = 0; i < v.size(); i++)
 		uv.push_back(cart_polar(v[i]));
 	return uv;
 }
-std::vector<glm::vec2>			generate_sphereical_uvs(std::vector<glm::vec3> v)
+ std::vector<glm::vec2>			PrimativeGenerator::generate_sphereical_uvs(std::vector<glm::vec3> v)
 {
 	std::vector<glm::vec2> uv;
 	for (int i = 0; i < v.size(); i++)
@@ -352,7 +318,7 @@ std::vector<glm::vec2>			generate_sphereical_uvs(std::vector<glm::vec3> v)
 	}
 	return uv;
 }
-std::vector<glm::vec2>			generate_repeated_rect_uvs(std::vector<glm::vec3> v)
+ std::vector<glm::vec2>			PrimativeGenerator::generate_repeated_rect_uvs(std::vector<glm::vec3> v)
 {
 	std::vector<glm::vec2> uv;
 	for (int i = 0; i < v.size(); i += 6)
@@ -367,14 +333,14 @@ std::vector<glm::vec2>			generate_repeated_rect_uvs(std::vector<glm::vec3> v)
 	return uv;
 }
 // generates a single color buffer
-std::vector<glm::vec3>			generate_colour_buffer(glm::vec3 colour, int n)
+ std::vector<glm::vec3>			PrimativeGenerator::generate_colour_buffer(glm::vec3 colour, int n)
 {
 	std::vector<glm::vec3> v;
 	for (int i = 0; i < n; i++)
 		v.push_back(colour);
 	return v;
 }
-std::vector<glm::vec3>			generate_terrain_sphere(std::vector<glm::vec3> v, std::vector<glm::vec3> m)
+ std::vector<glm::vec3>			PrimativeGenerator::generate_terrain_sphere(std::vector<glm::vec3> v, std::vector<glm::vec3> m)
 {
 	std::vector<glm::vec3> V;
 	for (int i = 0; i < v.size(); i += 3)
@@ -390,30 +356,30 @@ std::vector<glm::vec3>			generate_terrain_sphere(std::vector<glm::vec3> v, std::
 	}
 	return V;
 }
-std::vector<glm::vec3>			generate_centered_square_mesh(int w, int h)
+ std::vector<glm::vec3>			PrimativeGenerator::generate_centered_square_mesh(int w, int h)
 {
-	glm::vec3
-		s = glm::vec3(1 / (float)w, 1 / (float)h, 0),
-		a = glm::vec3(0, 0, 0) * s,
-		b = glm::vec3(0, 1, 0) * s,
-		c = glm::vec3(1, 1, 0) * s,
-		d = glm::vec3(1, 0, 0) * s;
-	std::vector<glm::vec3> n;
+	 glm::vec3
+		 s = glm::vec3(1 / (float)w, 1 / (float)h, 0),
+		 a = glm::vec3(0, 0, 0) * s,
+		 b = glm::vec3(0, 1, 0) * s,
+		 c = glm::vec3(1, 1, 0) * s,
+		 d = glm::vec3(1, 0, 0) * s;
+	 std::vector<glm::vec3> n;
 
-	for (int y = 0; y < h; ++y)
-		for (int x = 0; x < w; ++x)
-		{
-			glm::vec3 t = s * glm::vec3(x, y, 0) - glm::vec3(0.5f, 0.5f, 0);
-			n.push_back(a + t);
-			n.push_back(b + t);
-			n.push_back(c + t);
-			n.push_back(c + t);
-			n.push_back(d + t);
-			n.push_back(a + t);
-		}
-	return n;
+	 for (int y = 0; y < h; ++y)
+		 for (int x = 0; x < w; ++x)
+		 {
+			 glm::vec3 t = s * glm::vec3(x, y, 0) - glm::vec3(0.5f, 0.5f, 0);
+			 n.push_back(a + t);
+			 n.push_back(b + t);
+			 n.push_back(c + t);
+			 n.push_back(c + t);
+			 n.push_back(d + t);
+			 n.push_back(a + t);
+		 }
+	 return n;
 }
-std::vector<glm::vec3>			generate_square_mesh(int w, int h)
+ std::vector<glm::vec3>			PrimativeGenerator::generate_square_mesh(int w, int h)
 {
 	glm::vec3
 		s = glm::vec3(1 / (float)w, 1 / (float)h, 0),
@@ -436,31 +402,31 @@ std::vector<glm::vec3>			generate_square_mesh(int w, int h)
 		}
 	return n;
 }
-std::vector<glm::vec3>	*		generate_terrain(std::vector<glm::vec3> * v, int w, int h, float variation, float flattness)
-{
-	float m = variation / (float)max(w, h);
-	for (int y = 0; y < h; ++y)
-		for (int x = 0; x < w; ++x)
-		{
-			int index = (x + y * w) * 6;
-			float heightSum = stb_perlin_noise3(x * m, y * m, 0, m, m) * flattness;
-			(*v)[index].y += heightSum;
-			(*v)[index + 5].y += heightSum;
-			if (x > 0)
-				(*v)[index - 2].y += heightSum;
-			if (y > 0)
-			{
-				(*v)[index - w * 6 + 1].y += heightSum;
-				if (x > 0)
-				{
-					(*v)[index - (w + 1) * 6 + 2].y += heightSum;
-					(*v)[index - (w + 1) * 6 + 3].y += heightSum;
-				}
-			}
-		}
-	return v;
-}
-std::vector<glm::vec3>			generate_terrian_colour(std::vector<glm::vec3> v, float max_height)
+// std::vector<glm::vec3> *			PrimativeGenerator::generate_terrain(std::vector<glm::vec3> * v, int w, int h, float variation, float flattness)
+//{
+//	float m = variation / (float)max(w, h);
+//	for (int y = 0; y < h; ++y)
+//		for (int x = 0; x < w; ++x)
+//		{
+//			int index = (x + y * w) * 6;
+//			float heightSum = stb_perlin_noise3(x * m, y * m, 0, m, m) * flattness;
+//			(*v)[index].y += heightSum;
+//			(*v)[index + 5].y += heightSum;
+//			if (x > 0)
+//				(*v)[index - 2].y += heightSum;
+//			if (y > 0)
+//			{
+//				(*v)[index - w * 6 + 1].y += heightSum;
+//				if (x > 0)
+//				{
+//					(*v)[index - (w + 1) * 6 + 2].y += heightSum;
+//					(*v)[index - (w + 1) * 6 + 3].y += heightSum;
+//				}
+//			}
+//		}
+//	return v;
+//}
+ std::vector<glm::vec3>			PrimativeGenerator::generate_terrian_colour(std::vector<glm::vec3> v, float max_height)
 {
 	std::vector<glm::vec3> c;
 	float f, h;
@@ -472,7 +438,7 @@ std::vector<glm::vec3>			generate_terrian_colour(std::vector<glm::vec3> v, float
 	}
 	return c;
 }
-std::vector<glm::vec3>			generate_water_colour(std::vector<glm::vec3> v)
+ std::vector<glm::vec3>			PrimativeGenerator::generate_water_colour(std::vector<glm::vec3> v)
 {
 	std::vector<glm::vec3> c;
 	float f, h;
@@ -484,16 +450,76 @@ std::vector<glm::vec3>			generate_water_colour(std::vector<glm::vec3> v)
 	}
 	return c;
 }
-std::vector<glm::vec3>			pre_rotate(std::vector<glm::vec3> v, glm::vec3 rotate)
+ std::vector<glm::vec3>			PrimativeGenerator::pre_rotate(std::vector<glm::vec3> v, glm::vec3 rotate)
 {
 	for (glm::vec3 V : v)
 		V = glm::quat(rotate) * V;
 	return v;
 }
 
+ std::vector<glm::vec3>			PrimativeGenerator::generate_square_border(float weight, float aspectRatio)
+ {
+	 std::vector<glm::vec3> n;
+
+	 glm::vec3 a, b, c, d;
+
+	 // left
+	 a = glm::vec3(0, 0, 0);
+	 b = glm::vec3(0, 1, 0);
+	 c = glm::vec3(weight / aspectRatio, 1, 0);
+	 d = glm::vec3(weight / aspectRatio, 0, 0);
+
+	 n.push_back(a);
+	 n.push_back(b);
+	 n.push_back(c);
+	 n.push_back(c);
+	 n.push_back(d);
+	 n.push_back(a);
+
+	 //top
+	 a = glm::vec3(0, 1- weight* aspectRatio, 0);
+	 b = glm::vec3(0, 1, 0);
+	 c = glm::vec3(1, 1, 0);
+	 d = glm::vec3(1, 1- weight* aspectRatio, 0);
+
+	 n.push_back(a);
+	 n.push_back(b);
+	 n.push_back(c);
+	 n.push_back(c);
+	 n.push_back(d);
+	 n.push_back(a);
+
+	 //right
+	 a = glm::vec3(1- weight/ aspectRatio, 0, 0);
+	 b = glm::vec3(1- weight/ aspectRatio, 1, 0);
+	 c = glm::vec3(1, 1, 0);
+	 d = glm::vec3(1, 0, 0);
+
+	 n.push_back(a);
+	 n.push_back(b);
+	 n.push_back(c);
+	 n.push_back(c);
+	 n.push_back(d);
+	 n.push_back(a);
+
+	 //bottom
+	 a = glm::vec3(0, 0, 0);
+	 b = glm::vec3(0, weight * aspectRatio, 0);
+	 c = glm::vec3(1, weight * aspectRatio, 0);
+	 d = glm::vec3(1, 0, 0);
+
+	 n.push_back(a);
+	 n.push_back(b);
+	 n.push_back(c);
+	 n.push_back(c);
+	 n.push_back(d);
+	 n.push_back(a);
+
+	 return n;
+ }
 
 // generates a random color buffer where max is the cap color
-std::vector<glm::vec3>			random_colour_buffer(glm::vec3 max, int n)
+ std::vector<glm::vec3>			PrimativeGenerator::random_colour_buffer(glm::vec3 max, int n)
 {
 	std::vector<glm::vec3> v;
 	for (int i = 0; i < n; i++)
@@ -501,7 +527,7 @@ std::vector<glm::vec3>			random_colour_buffer(glm::vec3 max, int n)
 	return v;
 }
 // generates a single color buffer of random intensities
-std::vector<glm::vec3>			random_intesity_colour_buffer(glm::vec3 colour, int n)
+ std::vector<glm::vec3>			PrimativeGenerator::random_intesity_colour_buffer(glm::vec3 colour, int n)
 {
 	std::vector<glm::vec3> v;
 	float f;
@@ -514,7 +540,7 @@ std::vector<glm::vec3>			random_intesity_colour_buffer(glm::vec3 colour, int n)
 }
 
 
-std::vector<glm::vec3>			load_model(const char * filename)
+ std::vector<glm::vec3>			PrimativeGenerator::load_model(const char * filename)
 {
 	std::vector<tinyobj::shape_t> shapes;
 	std::vector<tinyobj::material_t> materials;
@@ -523,8 +549,8 @@ std::vector<glm::vec3>			load_model(const char * filename)
 	std::string obj_err =
 		tinyobj::LoadObj(shapes, materials, filename, NULL);
 
-	printf("[%-11s]	   ERRORs       : [ %s ]\n", "MODEL_LOAD", obj_err);
-
+	CINFO(alib::StringFormat("model loaded with errors:\n%0").arg(obj_err).str());
+		
 	for (int i = 0; i < shapes.size(); i++)
 		for (int j = 0; j < shapes[i].mesh.indices.size(); j++)
 			vertices.push_back(glm::vec3(
@@ -537,13 +563,13 @@ std::vector<glm::vec3>			load_model(const char * filename)
 
 
 // creates a vector of Vertices to pass to Obj
-std::vector<Vertex>				pack_object(
+ gfx::VertexData				PrimativeGenerator::pack_object(
 	std::vector<glm::vec3> * v,
 	unsigned int flags,
 	glm::vec3 color
 )
 {
-	std::vector<Vertex> object;
+	std::vector<gfx::Vertex_T> object;
 	std::vector<glm::vec3> n, c, t, nv = *v;
 	std::vector<glm::vec2> uv;
 
@@ -572,7 +598,7 @@ std::vector<Vertex>				pack_object(
 
 	for (int i = 0; i < nv.size(); ++i)
 	{
-		Vertex vert;
+		gfx::Vertex_T vert;
 		if (nv.size() != 0)
 			vert.position = nv[i];
 		else
@@ -597,15 +623,15 @@ std::vector<Vertex>				pack_object(
 	}
 	return object;
 }
-std::vector<Vertex>				pack_object(
+ gfx::VertexData				PrimativeGenerator::pack_object(
 	std::vector<glm::vec3> * v,
 	unsigned int flags,
 	glm::vec3 color,
-	image_data * image,
+	 alib::ImageData_T * image,
 	float k
 )
 {
-	std::vector<Vertex> object;
+	std::vector<gfx::Vertex_T> object;
 	std::vector<glm::vec3> n, c, t, nv = *v;
 	std::vector<glm::vec2> uv;
 
@@ -639,7 +665,7 @@ std::vector<Vertex>				pack_object(
 
 	for (int i = 0; i < nv.size(); ++i)
 	{
-		Vertex vert;
+		gfx::Vertex_T vert;
 		if (nv.size() != 0)
 			vert.position = nv[i];
 		else
@@ -665,7 +691,7 @@ std::vector<Vertex>				pack_object(
 	return object;
 }
 // normal packer of custom properties
-std::vector<Vertex>				pack_object(
+ gfx::VertexData			PrimativeGenerator::pack_object(
 	std::vector<glm::vec3> * v,
 	std::vector<glm::vec3> * c,
 	std::vector<glm::vec3> * n,
@@ -673,10 +699,10 @@ std::vector<Vertex>				pack_object(
 	std::vector<glm::vec3> * t
 )
 {
-	std::vector<Vertex> object;
+	std::vector<gfx::Vertex_T> object;
 	for (int i = 0; i < v->size(); ++i)
 	{
-		Vertex vert;
+		gfx::Vertex_T vert;
 		if (v != NULL)
 			vert.position = (*v)[i];
 		else

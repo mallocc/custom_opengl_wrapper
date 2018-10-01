@@ -17,7 +17,7 @@ out vec4 out_color;
 
 void main() 
 {	
-	vec3 final_color = (o_color + texture2D(u_tex,o_uv).rgb);
+	vec3 final_color = o_color + vec3(texture2D(u_tex,o_uv));
 
 // apply fragment color
 	out_color = vec4(final_color,1);

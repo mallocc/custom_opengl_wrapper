@@ -28,6 +28,39 @@
     <Filter Include="shaders">
       <UniqueIdentifier>{2691a573-7d67-438b-8ca1-72acd489e6ca}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\gfx">
+      <UniqueIdentifier>{b5cbfc3d-04a5-4b11-9501-f712e7f4f045}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\gfx">
+      <UniqueIdentifier>{0558da55-b6aa-42a1-8b6a-0d8665c48d4a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\other">
+      <UniqueIdentifier>{cd7acfd0-5ad0-4e7f-aa84-ff90172ad73e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\gfx\engine">
+      <UniqueIdentifier>{d1bbe14c-4d61-4fe5-aae6-54f4ff62a3d4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\gfx\lerp">
+      <UniqueIdentifier>{2f0193dc-02ae-4ae9-b7b0-fbf756776026}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\gfx\lerp">
+      <UniqueIdentifier>{9ceb17dc-e836-43c6-8a23-299a98f94aea}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\gfx\gui">
+      <UniqueIdentifier>{39d5919f-1295-4bbf-b4d6-54f7208064b1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\gfx\gui">
+      <UniqueIdentifier>{07588180-9e5b-4fd7-83ad-2aeb98454aa5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\gfx\engine">
+      <UniqueIdentifier>{e03c335f-413a-48a8-9ee4-400ef7ce3776}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\alib">
+      <UniqueIdentifier>{a26ec5ed-3360-461b-919c-94f36523f24c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\alib">
+      <UniqueIdentifier>{1fe0444d-16e0-44c0-8a03-3369e152a2d9}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -36,8 +69,53 @@
     <ClCompile Include="include\tiny_object_loader\tiny_obj_loader.cpp">
       <Filter>Source Files\tiny_obj_loader</Filter>
     </ClCompile>
-    <ClCompile Include="load_image.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="BezierLerper.cpp">
+      <Filter>Source Files\gfx\lerp</Filter>
+    </ClCompile>
+    <ClCompile Include="CameraSequencer.cpp">
+      <Filter>Source Files\gfx\lerp</Filter>
+    </ClCompile>
+    <ClCompile Include="Lerper.cpp">
+      <Filter>Source Files\gfx\lerp</Filter>
+    </ClCompile>
+    <ClCompile Include="LerperSequencer.cpp">
+      <Filter>Source Files\gfx\lerp</Filter>
+    </ClCompile>
+    <ClCompile Include="VarHandleManager.cpp">
+      <Filter>Source Files\gfx\engine</Filter>
+    </ClCompile>
+    <ClCompile Include="VarHandle.cpp">
+      <Filter>Source Files\gfx\engine</Filter>
+    </ClCompile>
+    <ClCompile Include="TexturedMesh.cpp">
+      <Filter>Source Files\gfx\engine</Filter>
+    </ClCompile>
+    <ClCompile Include="Mesh.cpp">
+      <Filter>Source Files\gfx\engine</Filter>
+    </ClCompile>
+    <ClCompile Include="GLSLProgramManager.cpp">
+      <Filter>Source Files\gfx\engine</Filter>
+    </ClCompile>
+    <ClCompile Include="GLSLProgram.cpp">
+      <Filter>Source Files\gfx\engine</Filter>
+    </ClCompile>
+    <ClCompile Include="GLContent.cpp">
+      <Filter>Source Files\gfx\engine</Filter>
+    </ClCompile>
+    <ClCompile Include="GLCamera.cpp">
+      <Filter>Source Files\gfx\engine</Filter>
+    </ClCompile>
+    <ClCompile Include="FBOManager.cpp">
+      <Filter>Source Files\gfx\engine</Filter>
+    </ClCompile>
+    <ClCompile Include="FBO.cpp">
+      <Filter>Source Files\gfx\engine</Filter>
+    </ClCompile>
+    <ClCompile Include="PrimativeGenerator.cpp">
+      <Filter>Source Files\gfx</Filter>
+    </ClCompile>
+    <ClCompile Include="ImageLoader.cpp">
+      <Filter>Source Files\alib</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -81,52 +159,97 @@
       <Filter>Header Files\tiny_obj_loader</Filter>
     </ClInclude>
     <ClInclude Include="colors.h">
-      <Filter>Header Files</Filter>
+      <Filter>Header Files\gfx</Filter>
     </ClInclude>
-    <ClInclude Include="fbo.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="Types.h">
+      <Filter>Header Files\gfx</Filter>
     </ClInclude>
     <ClInclude Include="glm.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="glslprogram.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="lerp.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="light.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="load_image.h">
-      <Filter>Header Files</Filter>
+      <Filter>Header Files\other</Filter>
     </ClInclude>
     <ClInclude Include="opengl.h">
-      <Filter>Header Files</Filter>
+      <Filter>Header Files\other</Filter>
     </ClInclude>
     <ClInclude Include="stb_image.h">
-      <Filter>Header Files</Filter>
+      <Filter>Header Files\other</Filter>
     </ClInclude>
-    <ClInclude Include="varhandle.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="CLog.h">
+      <Filter>Header Files\alib</Filter>
     </ClInclude>
-    <ClInclude Include="vertex.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="FLog.h">
+      <Filter>Header Files\alib</Filter>
     </ClInclude>
-    <ClInclude Include="primitive_generators.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="GUIManager.h">
+      <Filter>Header Files\gfx\gui</Filter>
     </ClInclude>
-    <ClInclude Include="glcontent.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="Lerper.h">
+      <Filter>Header Files\gfx\lerp</Filter>
     </ClInclude>
-    <ClInclude Include="textured_mesh.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="LerperSequencer.h">
+      <Filter>Header Files\gfx\lerp</Filter>
     </ClInclude>
-    <ClInclude Include="mesh.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="BezierLerper.h">
+      <Filter>Header Files\gfx\lerp</Filter>
     </ClInclude>
-    <ClInclude Include="save_image.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="CameraSequencer.h">
+      <Filter>Header Files\gfx\lerp</Filter>
+    </ClInclude>
+    <ClInclude Include="FBO.h">
+      <Filter>Header Files\gfx\engine</Filter>
+    </ClInclude>
+    <ClInclude Include="FBOManager.h">
+      <Filter>Header Files\gfx\engine</Filter>
+    </ClInclude>
+    <ClInclude Include="GLCamera.h">
+      <Filter>Header Files\gfx\engine</Filter>
+    </ClInclude>
+    <ClInclude Include="GLContent.h">
+      <Filter>Header Files\gfx\engine</Filter>
+    </ClInclude>
+    <ClInclude Include="GLSLProgram.h">
+      <Filter>Header Files\gfx\engine</Filter>
+    </ClInclude>
+    <ClInclude Include="GLSLProgramManager.h">
+      <Filter>Header Files\gfx\engine</Filter>
+    </ClInclude>
+    <ClInclude Include="Mesh.h">
+      <Filter>Header Files\gfx\engine</Filter>
+    </ClInclude>
+    <ClInclude Include="VarHandle.h">
+      <Filter>Header Files\gfx\engine</Filter>
+    </ClInclude>
+    <ClInclude Include="VarHandleManager.h">
+      <Filter>Header Files\gfx\engine</Filter>
+    </ClInclude>
+    <ClInclude Include="ShadowMapper.h">
+      <Filter>Header Files\gfx\engine</Filter>
+    </ClInclude>
+    <ClInclude Include="TexturedMesh.h">
+      <Filter>Header Files\gfx\engine</Filter>
+    </ClInclude>
+    <ClInclude Include="ImageCreator.h">
+      <Filter>Header Files\alib</Filter>
+    </ClInclude>
+    <ClInclude Include="ImageLoader.h">
+      <Filter>Header Files\alib</Filter>
+    </ClInclude>
+    <ClInclude Include="PrimativeGenerator.h">
+      <Filter>Header Files\gfx</Filter>
+    </ClInclude>
+    <ClInclude Include="TypeFactory.h">
+      <Filter>Header Files\gfx</Filter>
+    </ClInclude>
+    <ClInclude Include="StringFormat.h">
+      <Filter>Header Files\alib</Filter>
+    </ClInclude>
+    <ClInclude Include="KeyboardEvents.h">
+      <Filter>Header Files\alib</Filter>
+    </ClInclude>
+    <ClInclude Include="GFXLinker.h">
+      <Filter>Header Files\gfx\gui</Filter>
+    </ClInclude>
+    <ClInclude Include="GFXMesh.h">
+      <Filter>Header Files\gfx\gui</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -200,6 +323,30 @@
       <Filter>shaders</Filter>
     </None>
     <None Include="shaders\mandle.vert">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="shaders\shadowmap.frag">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="shaders\shadowmap.vert">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="shaders\refraction.frag">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="shaders\refraction.vert">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="shaders\basic_texture_gui.frag">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="shaders\basic_texture_gui.vert">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="shaders\basic_gui.frag">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="shaders\basic_gui.vert">
       <Filter>shaders</Filter>
     </None>
   </ItemGroup>

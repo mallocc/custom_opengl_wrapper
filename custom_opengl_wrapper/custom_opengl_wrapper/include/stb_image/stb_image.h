@@ -4272,7 +4272,7 @@ static float *hdr_load(stbi *s, int *x, int *y, int *comp, int req_comp)
    float *hdr_data;
    int len;
    unsigned char count, value;
-   int i, j, k, c1,c2, z;
+   int i, j, k, m_c1,m_c2, z;
 
 
    // Check identifier
@@ -4325,15 +4325,15 @@ static float *hdr_load(stbi *s, int *x, int *y, int *comp, int req_comp)
       scanline = NULL;
 
       for (j = 0; j < height; ++j) {
-         c1 = get8(s);
-         c2 = get8(s);
+         m_c1 = get8(s);
+         m_c2 = get8(s);
          len = get8(s);
-         if (c1 != 2 || c2 != 2 || (len & 0x80)) {
+         if (m_c1 != 2 || m_c2 != 2 || (len & 0x80)) {
             // not run-length encoded, so we have to actually use THIS data as a decoded
             // pixel (note this can't be a valid pixel--one of RGB must be >= 128)
             uint8 rgbe[4];
-            rgbe[0] = (uint8) c1;
-            rgbe[1] = (uint8) c2;
+            rgbe[0] = (uint8) m_c1;
+            rgbe[1] = (uint8) m_c2;
             rgbe[2] = (uint8) len;
             rgbe[3] = (uint8) get8u(s);
             hdr_convert(hdr_data, rgbe, req_comp);

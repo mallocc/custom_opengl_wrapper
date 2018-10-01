@@ -1,48 +1,43 @@
+
 #include <stdio.h>
+#include <vector>
 
-#include "glcontent.h"
-
-#include "glslprogram.h"
+#include "GLContent.h"
+#include "GLCamera.h"
+#include "GLSLProgram.h"
+#include "GLSLProgramManager.h"
 #include "colors.h"
-#include "fbo.h"
-#include "light.h"
-#include "mesh.h"
-#include "primitive_generators.h"
-#include "save_image.h"
+#include "FBO.h"
+#include "FBOManager.h"
+#include "Mesh.h"
+#include "PrimativeGenerator.h"
 
-#include "lerp.h"
+#include "CLog.h"
 
-#include <vector>;
+#include "StringFormat.h"
 
-GLSLProgramManager program_manager;
+#include "GUIManager.h"
 
-FBOManager fbo_manager;
+gfx::engine::GLSLProgramManager program_manager;
+gfx::engine::GLContent content;
+gfx::engine::GLCamera camera = gfx::engine::GLCamera(glm::vec3(0, 0, 0), glm::vec3(), glm::vec3(0,0,-1), glm::vec3(0, 1, 0));
 
-GLContent content;
+gfx::gui::GFXManager gfxManager;
 
-Camera camera = Camera(glm::vec3(0, 0, -3), glm::vec3(), glm::vec3(0,0,1), glm::vec3(0, 1, 0));
-
-Mesh
+gfx::engine::Mesh
 screen_texture,
 sphere;
 
-FBOID
-basic_fbo;
-
-GLSLProgramID
+gfx::engine::GLSLProgramID
 RENDER_PROGRAM,
-RENDER_ALPHA_PROGRAM;
-
-Light light = { glm::vec3(0,5,-5), WHITE, glm::vec3(1,1,100) };
+GUI_PROGRAM;
 
 glm::vec3 ambient_color;
 
-float alpha = 0.9f;
+float alpha = 0.5f;
 
-bool GLOW_ON = 1;
-bool BLUR_ON = 10;
-
-BezierLerper lerp(glm::vec3(), glm::vec3(0,0,2), glm::vec3(2,0,0), glm::vec3(2,0,2), 0.1f, 0);
+gfx::gui::GFXMesh mesh, mesh2;
+gfx::gui::GFXContainer container;
 
 //Returns random float
 inline float		randf()
@@ -50,107 +45,166 @@ inline float		randf()
 	return static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
 }
 
+void printMousePos()
+{
+	glm::vec2 pos = content.getMousePos();
+	CINFO(alib::StringFormat("x = %0 y = %1").arg(pos.x).arg(pos.y).str());
+}
+
+gfx::gui::GFXSlider * g_slider;
+void onSlide()
+{
+	CINFO(alib::StringFormat("Slider Value: %0").arg(g_slider->getValue()).str());
+}
+
+void onClosedWindow()
+{
+	CINFO("Window has closed.");
+}
+
+void testPrint()
+{
+	CINFO("lolololol");
+}
+
+class TestClass
+{
+public:
+	void print()
+	{
+		CINFO("u fucking legend");
+	}
+};
+
+TestClass testClass;
+
 void init()
 {
 	//// CREATE GLSL PROGAMS
-	printf("\n");
-	printf("Initialising GLSL programs...\n");
-	RENDER_PROGRAM        =
-		program_manager.add_program("shaders/basic_texture.vert", "shaders/basic_texture.frag",
-			content.get_model_mat(), content.get_view_mat(), content.get_proj_mat());
-	RENDER_ALPHA_PROGRAM =
-		program_manager.add_program("shaders/basic_texture.vert", "shaders/basic_texture_alpha.frag",
-			content.get_model_mat(), content.get_view_mat(), content.get_proj_mat());
+	CINFO("Initialising GLSL programs...");
+	RENDER_PROGRAM =
+		program_manager.addProgram("shaders/basic_texture.vert", "shaders/basic_texture.frag",
+			content.getModelMat(), content.getViewMat(), content.getProjMat());
+	GUI_PROGRAM =
+		program_manager.addProgram("shaders/basic_gui.vert", "shaders/basic_gui.frag",
+			content.getModelMat(), content.getViewMat(), content.getProjMat());
 
 	//// ADDING HANDLES TO PROGRAMS
-	printf("\n");
-	printf("Adding handles to GLSL programs...\n");
-	program_manager.get_program(RENDER_PROGRAM)
-		->set_tex_handle();
-	program_manager.get_program(RENDER_ALPHA_PROGRAM)
-		->set_tex_handle()
-		->add_handle(VarHandle("u_alpha", &alpha));
-
-	//// CREATE FBOS
-	printf("\n");
-	printf("Creating FBOs...\n");
-	basic_fbo           = fbo_manager.add_fbo(content.get_window_size(), &screen_texture);
-	
-	//// ADD OBJECTS TO FBOS
-	fbo_manager.get_fbo(basic_fbo);
-		//->add_mesh(&bunny);
+	CINFO("Adding handles to GLSL programs...");
+	program_manager.getProgram(RENDER_PROGRAM)
+		->setTexHandle();
+	program_manager.getProgram(GUI_PROGRAM)
+		->setColorHandle()
+		->setTexHandle();
 
 	//// CREATE OBJECTS
-	printf("\n");
-	printf("Initialising objects...\n");
+	CINFO("Initialising objects...");
 
 	std::vector<glm::vec3> v;
-
-	v = generate_square_mesh(1, 1);
-	screen_texture = Mesh(
+	v = gfx::PrimativeGenerator::generate_cube();
+	sphere = gfx::engine::Mesh(
 		"",
-		pack_object(&v, GEN_UVS_RECTS, BLACK),
-		glm::vec3(),
-		glm::vec3(0, 0, 1),	glm::radians(0.0f),
-		glm::vec3(0, 0, 1),	glm::radians(0.0f),
-		glm::vec3(content.get_window_size().x, content.get_window_size().y, 1)
-	);
-	int res = 200;
-	v = generate_sphere(res, res);
-	sphere = Mesh(
-		"textures/mars.jpg",
-		pack_object(&v, GEN_UVS_SPHERE | GEN_NORMS, WHITE),
+		gfx::PrimativeGenerator::pack_object(&v, GEN_COLOR_RAND, gfx::WHITE),
 		glm::vec3(0, 0, 0),
 		glm::vec3(0, 1, 0), glm::radians(0.0f),
 		glm::vec3(1, 0, 0), glm::radians(90.0f),
 		glm::vec3(1, 1, 1)
 	);
 
+	v = gfx::PrimativeGenerator::generate_square_mesh(1, 1);
+	container = gfx::gui::GFXClickableContainer(gfx::gui::GFXMesh(
+		glm::vec2(300, 300),
+		glm::vec2(250, 250),
+		gfx::PrimativeGenerator::pack_object(&v, GEN_COLOR, gfx::WHITE),
+		glm::vec4(gfx::GREY, 0.8f)));
+	gfxManager.addComponent(&container);
+	gfx::gui::GFXButtonRect * button = new gfx::gui::GFXButtonRect(glm::vec2(), glm::vec2(100, 50));
+	button->link(&gfx::gui::GFXButtonRect::onButtonPressed, gfx::gui::ACTION(&testClass, &TestClass::print));
+	container.addComponent(button);
+	
+
+	gfx::gui::GFXColorStyle m_colorStyle = { gfx::ORANGE_A, gfx::OFF_WHITE_A, gfx::OFF_BLACK_A };
+	
+	gfx::gui::GFXWindow * window = new gfx::gui::GFXWindow(glm::vec2(50, 50), glm::vec2(300, 300));
+	window->setColorStyle(m_colorStyle);
+	window->link(&gfx::gui::GFXWindow::onClose, gfx::gui::ACTION(onClosedWindow));
+	gfxManager.addComponent(window);
+	
+	window->addComponent(new gfx::gui::GFXButtonRect(glm::vec2(50, 0), glm::vec2(100, 50)));
+
+	//gfx::gui::GFXSlider * slider = g_slider = new gfx::gui::GFXSlider(glm::vec2(0, 100), glm::vec2(200, 50), true, 0.5f);
+	//slider->link(&gfx::gui::GFXSlider::onSlide, gfx::gui::ACTION(onSlide));
+	//window->addComponent(slider);
+
 }
 
 void physics()
 {
-	sphere.pos = lerp.lerpStepSmooth(0.001f);
+	sphere.m_theta += 0.001f;
 }
 
 void draw_loop()
 {
-	content.set_camera(&camera);
+	content.setCamera(&camera);
 
 	physics();
 
-	FBO::unbind();
+	gfxManager.checkEvents(&content);
 
-	VarHandle
+	gfxManager.update(&content);
+
+	gfx::engine::FBO::unbind();
+
+	gfx::engine::VarHandle
 		*model_mat_handle,
-		*texture_handle;
+		*texture_handle,
+		*view_mat_handle,
+		*proj_mat_handle,
+		*color_handle;
 
 	content.clearAll();
-	content.loadPerspective();
-	program_manager.load_program(RENDER_PROGRAM);
-	model_mat_handle = program_manager.get_current_program()->get_model_mat4_handle();
-	texture_handle = program_manager.get_current_program()->get_tex_handle();
+	content.loadPseudoIsometric();
+	program_manager.loadProgram(RENDER_PROGRAM);
+	model_mat_handle = program_manager.getCurrentProgram()->getModelMat4Handle();
+	texture_handle   = program_manager.getCurrentProgram()->getTexHandle();	
 	sphere.draw(0, model_mat_handle, texture_handle);
+
+	content.clearDepthBuffer();
+	content.loadExternalOrtho();
+	program_manager.loadProgram(GUI_PROGRAM);
+	model_mat_handle = program_manager.getCurrentProgram()->getModelMat4Handle();
+	color_handle     = program_manager.getCurrentProgram()->getColorHandle();
+	texture_handle   = program_manager.getCurrentProgram()->getTexHandle();
+	gfxManager.draw(model_mat_handle, color_handle);
 }
 
-unsigned char * image_data_pixels = new unsigned char[content.get_window_size().x * content.get_window_size().y * 3];
-
+void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
+{
+	if (action == GLFW_PRESS)
+	{
+		switch (button)
+		{
+		case GLFW_MOUSE_BUTTON_LEFT:
+			break;
+		}
+	}
+}
 static void	key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
 	if (action == GLFW_PRESS || action == 2)
 	{
 		switch (key)
 		{
-		case GLFW_KEY_ENTER:
-			glReadPixels(0, 0, content.get_window_size().x, content.get_window_size().y, GL_RGB, GL_UNSIGNED_BYTE, image_data_pixels);
-			createBMP(image_data_pixels, content.get_window_size().x, content.get_window_size().y, 3, "test.bmp");
-		break;
-
 		case GLFW_KEY_B:
-			BLUR_ON = !BLUR_ON;
 			break;
 		case GLFW_KEY_G:
-			GLOW_ON = !GLOW_ON;
+			break;
+
+		case GLFW_KEY_UP:
+			content.setIsometricDepth(content.getIsometricDepth() + 0.25f);
+			break;
+		case GLFW_KEY_DOWN:
+			content.setIsometricDepth(content.getIsometricDepth() - 0.25f);
 			break;
 
 		case GLFW_KEY_ESCAPE:
@@ -163,9 +217,7 @@ static void	key_callback(GLFWwindow* window, int key, int scancode, int action, 
 
 int main()
 {
-	content.set_clear_color(GREEN);
-	content.set_eye_pos(glm::vec3(0,0,-3));
-	content.run(draw_loop, init, key_callback);
-
+	content.setClearColor(gfx::GREY);
+	content.run(draw_loop, init, key_callback, mouse_button_callback);
 	return 0;
 }
