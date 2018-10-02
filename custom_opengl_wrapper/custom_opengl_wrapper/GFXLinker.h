@@ -9,12 +9,15 @@ namespace gfx
 		typedef void(*GFXFuncPtr)();
 
 		template<typename T>
-		struct GFXMemberPtr
+		struct GFXTemplateStruct
 		{
 			typedef void (T::*GFXFuncType)();
+			typedef T GFXVarType;
 		};
 		template<typename T>
-		using GFXMemberFunc = typename GFXMemberPtr<T>::GFXFuncType;
+		using GFXMemberFunc = typename GFXTemplateStruct<T>::GFXFuncType;
+		template<typename T>
+		using GFXMemberVar = typename GFXTemplateStruct<T>::GFXVarType;
 
 		class IGFXMetaAction
 		{

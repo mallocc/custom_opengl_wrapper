@@ -111,6 +111,26 @@ namespace
 	 }
 	 return v;
  }
+
+ std::vector<glm::vec3>			PrimativeGenerator::generate_centered_circle(int k)
+ {
+	 std::vector<glm::vec3> v;
+	 float step = 2.0f * 3.141596f / float(k);
+	 float c = 0.0f, s = 0.0f;
+	 float len = 0.0f;
+	 for (float a = 0; a <= (2.0f * 3.141596f); a += step)
+	 {
+		 c = cos(a - step);
+		 s = sin(a - step);
+		 v.push_back(glm::vec3(c, s, len) / 2.0f + glm::vec3(0.5f,0.5f,0));
+		 c = cos(a);
+		 s = sin(a);
+		 v.push_back(glm::vec3(c, s, len) / 2.0f + glm::vec3(0.5f, 0.5f, 0));
+		 v.push_back(glm::vec3(0.0f, 0.0f, len) / 2.0f + glm::vec3(0.5f, 0.5f, 0));
+	 }
+	 return v;
+ }
+
  std::vector<glm::vec3>			PrimativeGenerator::generate_cylinder(int k, float len)
 {
 	std::vector<glm::vec3> v;

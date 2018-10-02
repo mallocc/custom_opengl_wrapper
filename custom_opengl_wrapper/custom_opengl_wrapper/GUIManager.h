@@ -21,7 +21,7 @@
 
 namespace gfx
 {
-	namespace gui
+    namespace gui
 	{
 		// TYPEDEFS
 		typedef int GFXID;
@@ -66,7 +66,7 @@ namespace gfx
 				CINFO("Loading new GFXCircleMesh...");
 				m_pos = pos;
 				m_size = size;
-				std::vector<glm::vec3> v = gfx::PrimativeGenerator::generate_circle(20);
+				std::vector<glm::vec3> v = gfx::PrimativeGenerator::generate_centered_circle(20);
 				VertexData data = gfx::PrimativeGenerator::pack_object(&v, GEN_COLOR, gfx::BLUE);
 				init(data);
 			}
@@ -477,8 +477,8 @@ namespace gfx
 			}
 			bool isDragging(gfx::engine::GLContent * content)
 			{
-				return m_onDown &&
-					glm::length(content->getMouseDelta()) > 0;
+				return	glm::length(content->getMouseDelta()) > 0 && 
+					m_onDown;
 			}
 
 			GFXClickable() {}
@@ -545,6 +545,8 @@ namespace gfx
 			void update(gfx::engine::GLContent * content)
 			{
 				m_back->setPos(m_pos);
+				if(m_toggledState)
+					m_back->setColor(glm::vec3(m_colorStyle[0]) / 2.0f);
 			}
 			bool checkEvents(gfx::engine::GLContent * content)
 			{
@@ -588,6 +590,7 @@ namespace gfx
 			{
 				if (onPressed(isPressed(content)))
 				{
+					m_toggledState = !m_toggledState && m_isToggleable;
 					m_back->setColor(m_colorStyle[0]);
 					callTrigger(&GFXButtonRect::onButtonPressed);
 				}
@@ -616,7 +619,10 @@ namespace gfx
 					callTrigger(&GFXButtonRect::onButtonDragging);
 				}
 			}
-		protected:
+
+			bool m_toggledState = false;
+			bool m_isToggleable = false;
+		protected:					
 			GFXRectangleMesh * m_back;
 		};
 
@@ -708,36 +714,87 @@ namespace gfx
 
 			void update(gfx::engine::GLContent * content)
 			{
+				glm::vec2 delta = content->getMouseDelta();				
+
 				if (m_bar->m_onDragging)
 				{
-					m_pos += content->getMouseDelta();
-					m_pos.x = min(content->getWindowSize().x - m_size.x, m_pos.x);
-					m_pos.x = max(0, m_pos.x);
-					m_pos.y = min(content->getWindowSize().y - m_size.y, m_pos.y);
-					m_pos.y = max(0, m_pos.y);
-					m_container->setPos(m_pos);
-				}
-
-				if (m_resizingDir != GFX_RESIZE_NULL)
-				{
-					glm::vec2 delta = content->getMouseDelta();
-					switch (m_resizingDir)
-					{
-					case GFX_RESIZE_LEFT:						
-						m_pos.x += delta.x;
-						m_size.x -= delta.x;
-						break;
-					case GFX_RESIZE_RIGHT:
-						m_size.x += delta.x;
-						break;
-					case GFX_RESIZE_BOTTOM:
-						m_pos.y += delta.y;
-						m_size.y -= delta.y;
-						break;
-					}
-
+					m_pos += delta;
+					confinePositionToWindow(content);
 					validate();
 				}
+
+				glm::vec2 pos = m_pos;
+				glm::vec2 size = m_size;
+				if (m_isResizable && !m_maximised)
+				{
+					if (m_leftResizeBar->m_onDragging)
+					{
+						pos.x += delta.x;
+						size.x -= delta.x;
+						if (!isSmallerThanMin(size, m_minSize))
+						{
+							m_pos = pos;
+							m_size = size;
+							confineSizeToContent(content);
+							confinePositionToWindow(content);
+							validate();
+						}
+					}
+					else if (m_rightResizeBar->m_onDragging)
+					{
+						size.x += delta.x;
+						if (!isSmallerThanMin(size, m_minSize))
+						{
+							m_size = size;
+							confineSizeToContent(content);
+							confinePositionToWindow(content);
+							validate();
+						}
+					}
+					else if (m_bottomResizeBar->m_onDragging)
+					{
+
+						pos.y += delta.y;
+						size.y -= delta.y;
+						if (!isSmallerThanMin(size, m_minSize))
+						{
+							m_pos = pos;
+							m_size = size;
+							confineSizeToContent(content);
+							confinePositionToWindow(content);
+							validate();
+						}
+					}
+					else if (m_bottomLeftResizeBar->m_onDragging)
+					{
+						pos.x += delta.x;
+						size.x -= delta.x;
+						pos.y += delta.y;
+						size.y -= delta.y;
+						if (!isSmallerThanMin(size, m_minSize))
+						{
+							m_pos = pos;
+							m_size = size;
+							confineSizeToContent(content);
+							confinePositionToWindow(content);
+							validate();
+						}
+					}
+					else if (m_bottomRightResizeBar->m_onDragging)
+					{
+						size.x += delta.x;
+						pos.y += delta.y;
+						size.y -= delta.y;
+						if (!isSmallerThanMin(size, m_minSize))
+						{
+							m_pos = pos;
+							m_size = size;
+							confineSizeToContent(content);
+							confinePositionToWindow(content);
+							validate();
+						}
+					}
+				} // if m_resizeable
 
 				m_container->update(content);
 			}
@@ -748,10 +805,9 @@ namespace gfx
 				onWindowReleased(content);
 				onWindowDragging(content);
 				onWindowMove(content);
-
-				onClose(content);
-				onToggleMaximise(content);
 				onResize(content);
+				onClose(content);
+				onWindowScaled(content);				
 				return m_container->checkEvents(content) || m_onDown;
 			}
 			void draw(gfx::engine::VarHandle *model, gfx::engine::VarHandle *color)
@@ -775,6 +831,12 @@ namespace gfx
 
 				m_container->setPos(pos);
 				m_container->setSize(size);
+
+				m_leftResizeBar->setSize(glm::vec2(m_deadzone, size.y));
+				m_rightResizeBar->setPos(glm::vec2(size.x - m_deadzone, 0));
+				m_rightResizeBar->setSize(glm::vec2(m_deadzone, size.y));
+				m_bottomResizeBar->setSize(glm::vec2(size.x, m_deadzone));
+				m_bottomRightResizeBar->setPos(glm::vec2(size.x - m_deadzone, 0));
 
 				pos.x = 0;
 				pos.y = size.y - 20;
@@ -800,6 +862,7 @@ namespace gfx
 			{
 				glm::vec2 pos = m_pos, size = m_size;
 
+				// window ui components container
 				std::vector<glm::vec3> v = gfx::PrimativeGenerator::generate_square_mesh(1, 1);
 				m_container = new gfx::gui::GFXClickableContainer(gfx::gui::GFXMesh(
 					pos,
@@ -810,26 +873,54 @@ namespace gfx
 				m_container->setManager(m_manager);
 				m_container->setColorStyle(m_colorStyle);
 
+				// alter colorstyle for each component
+				GFXColorStyle colorStyle = { glm::vec4(0,0,0,0),m_colorStyle[1],m_colorStyle[2] };
+
+				// left resize grab
+				m_leftResizeBar = new gfx::gui::GFXButtonRect(glm::vec2(), glm::vec2(m_deadzone, size.y));
+				addComponent(m_leftResizeBar);
+				m_leftResizeBar->setColorStyle(colorStyle);
+				// right resize grab
+				m_rightResizeBar = new gfx::gui::GFXButtonRect(glm::vec2(size.x - m_deadzone, 0), glm::vec2(m_deadzone, size.y));
+				addComponent(m_rightResizeBar);
+				m_rightResizeBar->setColorStyle(colorStyle);
+				// bottom resize grab
+				m_bottomResizeBar = new gfx::gui::GFXButtonRect(glm::vec2(), glm::vec2(size.x, m_deadzone));
+				addComponent(m_bottomResizeBar);
+				m_bottomResizeBar->setColorStyle(colorStyle);
+				// bottom left resize grab
+				m_bottomLeftResizeBar = new gfx::gui::GFXButtonRect(glm::vec2(), glm::vec2(m_deadzone, m_deadzone));
+				addComponent(m_bottomLeftResizeBar);
+				m_bottomLeftResizeBar->setColorStyle(colorStyle);
+				// bottom right resize grab
+				m_bottomRightResizeBar = new gfx::gui::GFXButtonRect(glm::vec2(size.x - m_deadzone, 0), glm::vec2(m_deadzone, m_deadzone));
+				addComponent(m_bottomRightResizeBar);
+				m_bottomRightResizeBar->setColorStyle(colorStyle);
+
+				// top move grab
 				pos.x = 0;
-				pos.y = size.y - 20;
-				size.y = 20;
+				pos.y = size.y - m_topBarSize;
+				size.y = m_topBarSize;
 				m_bar = new gfx::gui::GFXButtonRect(pos, size);
 				addComponent(m_bar);
 
-				pos.x = size.x - 20;
-				size.x = 20;
-				size.y = 20;
-				m_close = new gfx::gui::GFXButtonRect(pos, size);
+				// close window button
+				pos.x = size.x - m_topBarSize;
+				size.x = m_topBarSize;
+				size.y = m_topBarSize;
+				m_close = new gfx::gui::GFXButtonCircle(pos, size);
 				addComponent(m_close);
-				GFXColorStyle colorStyle = { gfx::RED_A, m_colorStyle[1], m_colorStyle[2] };
+				colorStyle[0] = colorStyle[2];
 				m_close->setColorStyle(colorStyle);
 
-				pos.x -= 20;
-				m_maxmin = new gfx::gui::GFXButtonRect(pos, size);
+				// scale window button
+				pos.x -= m_topBarSize;
+				m_maxmin = new gfx::gui::GFXButtonCircle(pos, size);
 				addComponent(m_maxmin);
-				colorStyle[0] = gfx::BLUE_A;
+				colorStyle[0] = colorStyle[1];
 				m_maxmin->setColorStyle(colorStyle);
-
+				
+				// initialise container
 				m_container->init();
 
 				return this;
@@ -871,7 +962,7 @@ namespace gfx
 			}
 			void onWindowMove(gfx::engine::GLContent * content)
 			{
-				if (m_onDragging)
+				if (m_bar->m_onDragging)
 				{
 					callTrigger(&GFXWindow::onWindowMove);
 				}
@@ -918,47 +1009,67 @@ namespace gfx
 				else
 					minimiseWindow();
 			}
-			void onToggleMaximise(gfx::engine::GLContent * content)
+			void onWindowScaled(gfx::engine::GLContent * content)
 			{
 				if (m_maxmin->isPressed(content))
 				{
 					toggleMaximise(content);
-					callTrigger(&GFXWindow::onToggleMaximise);
+					callTrigger(&GFXWindow::onWindowScaled);
 				}
 			}
 
 			void onResize(gfx::engine::GLContent * content)
 			{
-				if (m_onDragging)
-				{
-					glm::vec2 mousePos = getRelativeMousePos(content);
-					float deadzone = 10;
-					if (mousePos.x >= 0 && mousePos.x <= deadzone && mousePos.y >= 0 && mousePos.y <= m_size.y)
-						m_resizingDir = GFX_RESIZE_LEFT;
-					else if (mousePos.x >= -deadzone + m_size.x && mousePos.x <= m_size.x && mousePos.y >= 0 && mousePos.y <= m_size.y)
-						m_resizingDir = GFX_RESIZE_RIGHT;
-					else if (mousePos.x >= 0 && mousePos.x <= m_size.x && mousePos.y >= 0 && mousePos.y <= deadzone)
-						m_resizingDir = GFX_RESIZE_BOTTOM;
-					else
-						m_resizingDir = GFX_RESIZE_NULL;
-
-					callTrigger(&GFXWindow::onResize);
-				}
-				else
-					m_resizingDir = GFX_RESIZE_NULL;
+				if(m_isResizable && !m_maximised)
+					if (m_leftResizeBar->m_onDragging || m_rightResizeBar->m_onDragging || m_bottomResizeBar->m_onDragging)
+					{
+						callTrigger(&GFXWindow::onResize);
+					}
 			}
+			
+			bool m_isResizable = true;
 		protected:
+			bool isSmallerThanMin(glm::vec2 a, glm::vec2 b)
+			{
+				return a.x < b.x || a.y < b.y;
+			}
+			void confineSizeToContent(gfx::engine::GLContent * content)
+			{
+				if (m_pos.x + m_size.x > content->getWindowSize().x)
+					m_size.x += content->getWindowSize().x - (m_pos.x + m_size.x);
+				if (m_pos.x < 0)
+					m_size.x += m_pos.x;
+				if (m_pos.y < 0)
+					m_size.y += m_pos.y;
+			}
+			void confinePositionToWindow(gfx::engine::GLContent * content)
+			{
+				m_pos.x = min(content->getWindowSize().x - m_size.x, m_pos.x);
+				m_pos.x = max(0, m_pos.x);
+				m_pos.y = min(content->getWindowSize().y - m_size.y, m_pos.y);
+				m_pos.y = max(0, m_pos.y);				
+			}
 			bool m_windowMoving = false;
-			int m_resizingDir = GFX_RESIZE_NULL;
 			bool m_maximised = false;
+		
+			float m_deadzone = 10;
+			float m_topBarSize = 20;
 			glm::vec2 m_oldPos;
 			glm::vec2 m_oldSize;
+			glm::vec2 m_minSize = glm::vec2(100,100);
 			GFXButtonRect * m_bar;
-			GFXButtonRect * m_close;
-			GFXButtonRect * m_maxmin;
+			GFXButtonRect * m_leftResizeBar;
+			GFXButtonRect * m_rightResizeBar;
+			GFXButtonRect * m_bottomResizeBar;
+			GFXButtonRect * m_bottomLeftResizeBar;
+			GFXButtonRect * m_bottomRightResizeBar;
+			GFXButtonCircle * m_close;
+			GFXButtonCircle * m_maxmin;
 			GFXClickableContainer * m_container;
 		};
 
+
+		// very broken
 		class GFXSlider : public GFXClickable, public GFXLinker<GFXSlider>
 		{
 		public:

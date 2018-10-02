@@ -130,7 +130,9 @@ void init()
 	window->link(&gfx::gui::GFXWindow::onClose, gfx::gui::ACTION(onClosedWindow));
 	gfxManager.addComponent(window);
 	
-	window->addComponent(new gfx::gui::GFXButtonRect(glm::vec2(50, 0), glm::vec2(100, 50)));
+	button = new gfx::gui::GFXButtonRect(glm::vec2(50, 50), glm::vec2(100, 50));
+	button->m_isToggleable = true;
+	window->addComponent(button);
 
 	//gfx::gui::GFXSlider * slider = g_slider = new gfx::gui::GFXSlider(glm::vec2(0, 100), glm::vec2(200, 50), true, 0.5f);
 	//slider->link(&gfx::gui::GFXSlider::onSlide, gfx::gui::ACTION(onSlide));
@@ -150,7 +152,6 @@ void draw_loop()
 	physics();
 
 	gfxManager.checkEvents(&content);
-
 	gfxManager.update(&content);
 
 	gfx::engine::FBO::unbind();

@@ -90,6 +90,7 @@ namespace gfx
 			static std::vector<glm::vec3>			generate_cube();
 			static std::vector<glm::vec3>			generate_cone(int k);
 			static std::vector<glm::vec3>			generate_circle(int k);
+			static std::vector<glm::vec3>			generate_centered_circle(int k);
 			static std::vector<glm::vec3>			generate_cylinder(int k, float len);
 			static std::vector<glm::vec3>			generate_sphere(int lats, int longs);
 			static std::vector<glm::vec3>			generate_sphere_invert(int lats, int longs);
