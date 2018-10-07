@@ -139,18 +139,18 @@ FBO * FBO::add_mesh(gfx::engine::Mesh * m)
 }
 
 // Just draws the meshes for this FBO
-void FBO::draw_meshes(gfx::engine::VarHandle * model, gfx::engine::VarHandle * tex)
+void FBO::draw_meshes(gfx::engine::MeshHandle_T handles)
 {
 	for (Mesh * m : m_meshes)
-		m->draw(0, model, tex);
+		m->draw(0, handles);
 }
 
 // Renders meshes to this FBO
-void FBO::binding_draw_meshes(gfx::engine::VarHandle * model, gfx::engine::VarHandle * tex)
+void FBO::binding_draw_meshes(gfx::engine::MeshHandle_T handles)
 {
 	bind();
 	for (Mesh * m : m_meshes)
-		m->draw(0, model, tex);
+		m->draw(0, handles);
 	unbind();
 }
 
@@ -170,9 +170,9 @@ void FBO::deactivate_texture()
 }
 
 // Draw the texture on the render mesh (make sure ortho is used)
-void FBO::draw_render_mesh(gfx::engine::VarHandle * model_handle, gfx::engine::VarHandle * texture_handle)
+void FBO::draw_render_mesh(gfx::engine::MeshHandle_T handles)
 {
-	activate_texture(texture_handle);
-	m_render_mesh->draw(0, model_handle, nullptr);
+	activate_texture(handles.textureHandle);
+	m_render_mesh->draw(0, handles);
 	deactivate_texture();
 }

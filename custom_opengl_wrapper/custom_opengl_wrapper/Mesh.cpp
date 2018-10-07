@@ -44,7 +44,7 @@ void Mesh::load_textures(const char *texfilename)
 {
 	if (texfilename != "")
 	{
-		m_tex = alib::ImageLoader::load_texture_from_image(texfilename);
+		m_tex = alib::ImageLoader::loadTextureFromImage(texfilename);
 		CINFO(alib::StringFormat("    %0 -> Texture ID %1").arg(texfilename).arg(m_tex).str());
 	}
 	else
@@ -54,10 +54,10 @@ void Mesh::load_textures(const char *texfilename)
 }
 
 // Draws the mesh including linking the model matrix
-void Mesh::draw(int wire_frame, gfx::engine::VarHandle *model, gfx::engine::VarHandle *texture_handle)
+void Mesh::draw(int wire_frame, gfx::engine::MeshHandle_T handles)
 {
-	model->load(get_model_mat());
-	draw_array(wire_frame, texture_handle);
+	handles.modelMatHandle->load(get_model_mat());
+	draw_array(wire_frame, handles.textureHandle);
 }
 
 // Draws just the VBO and activating the texture

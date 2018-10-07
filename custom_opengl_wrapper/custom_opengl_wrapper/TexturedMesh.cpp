@@ -124,7 +124,7 @@ TexturedMesh::TexturedMesh(
 		if (materials[i].diffuse_texname != "") {
 			std::string tex_name = materials[i].diffuse_texname;
 			tex_name = std::string(base_filename).append(tex_name.c_str()).c_str();
-			GLuint textId = alib::ImageLoader::load_texture_from_image(tex_name.c_str());
+			GLuint textId = alib::ImageLoader::loadTextureFromImage(tex_name.c_str());
 
 			//texture_map.insert(std::make_pair(materials[i].diffuse_texname.c_str(), t));
 

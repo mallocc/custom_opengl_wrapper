@@ -54,6 +54,16 @@ namespace gfx
 			int * m_data_ii;
 			int m_handle_type;
 		};
+
+		struct MeshHandle_T
+		{
+			VarHandle * textureHandle;
+			VarHandle * colorHandle;
+			VarHandle * flagHandle;
+			VarHandle * modelMatHandle;
+			VarHandle * viewMatHandle;
+			VarHandle * projMatHandle;
+		};
 	}
 }
 

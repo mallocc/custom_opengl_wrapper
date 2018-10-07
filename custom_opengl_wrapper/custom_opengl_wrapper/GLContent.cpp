@@ -272,6 +272,8 @@ void			GLContent::glLoop(gfx::engine::GLContentLoop graphics_loop, GLFWwindow * 
 	//Main Loop  
 	do
 	{
+		m_frames++;
+
 		// start clock for this tick
 		auto start = std::chrono::high_resolution_clock::now();
 		

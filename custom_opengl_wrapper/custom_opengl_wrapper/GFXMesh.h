@@ -111,17 +111,19 @@ namespace gfx
 			}
 
 			// Draws the mesh including linking the model matrix
-			void drawMesh(gfx::engine::VarHandle *model, gfx::engine::VarHandle *color)
+			void drawMesh(gfx::engine::MeshHandle_T handles)
 			{
-				model->load(getModelMat());
-				color->load(m_color);
+				handles.modelMatHandle->load(getModelMat());
+				handles.colorHandle->load(m_color);
+				handles.flagHandle->load(0);
 				drawArray();
 			}
 
-			void drawMesh(glm::mat4 modelMat, gfx::engine::VarHandle *model, gfx::engine::VarHandle *color)
+			void drawMesh(glm::mat4 modelMat, gfx::engine::MeshHandle_T handles)
 			{
-				model->load(modelMat * getModelMat());
-				color->load(m_color);
+				handles.modelMatHandle->load(modelMat * getModelMat());
+				handles.colorHandle->load(m_color);
+				handles.flagHandle->load(0);
 				drawArray();
 			}
 

@@ -79,6 +79,11 @@ namespace gfx
 
 			alib::KeyboardEvents * getKeyboardEvents();
 
+			int getFrames()
+			{
+				return m_frames;
+			}
+
 		private:
 			glm::mat4 getExternalOrtho();
 			glm::mat4 getExternalOrthoView();
@@ -139,6 +144,8 @@ namespace gfx
 			alib::KeyboardEvents m_keyboard;
 
 			glm::vec2 m_oldMousPos, m_newMousePos;
+
+			int m_frames = 0;
 		};
 
 	}

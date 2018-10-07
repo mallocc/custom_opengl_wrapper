@@ -23,7 +23,7 @@ namespace gfx
 			void load_textures(const char *texfilename);
 
 			// Draws the mesh including linking the model matrix
-			void draw(int wire_frame, VarHandle *model, VarHandle *texture_handle);
+			void draw(int wire_frame, gfx::engine::MeshHandle_T handles);
 
 			// Draws just the VBO and activating the texture
 			void draw_array(int wire_frame, VarHandle *texture_handle);

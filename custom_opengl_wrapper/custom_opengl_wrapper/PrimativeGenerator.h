@@ -24,6 +24,7 @@
 #define GEN_COLOR_RAND 0x20
 #define GEN_COLOR_RAND_I 0x40
 #define GEN_DEFAULT (GEN_NORMS | GEN_COLOR)
+#define GEN_SQUAREUVS 0x200
 
 namespace gfx
 {
@@ -123,6 +124,49 @@ namespace gfx
 			// generates a single color buffer of random intensities
 			static std::vector<glm::vec3>			random_intesity_colour_buffer(glm::vec3 colour, int n);
 
+
+			static std::vector<glm::vec2> generate_square_mesh_uvs(int w, int h)
+			{
+				glm::vec2
+					s = glm::vec2(1 / (float)w, 1 / (float)h),
+					a = glm::vec2(0, 0) * s,
+					b = glm::vec2(0, 1) * s,
+					c = glm::vec2(1, 1) * s,
+					d = glm::vec2(1, 0) * s;
+				std::vector<glm::vec2> n;
+
+				for (int y = 0; y < h; ++y)
+					for (int x = 0; x < w; ++x)
+					{
+						glm::vec2 t = s * glm::vec2(x, y);
+						n.push_back(b + t);
+						n.push_back(a + t);
+						n.push_back(d + t);
+						n.push_back(d + t);
+						n.push_back(c + t);
+						n.push_back(b + t);
+					}
+				return n;
+			}
+			static std::vector<glm::vec3> generate_square_meshes(int N)
+			{
+				glm::vec3
+					a = glm::vec3(0, 0, 0),
+					b = glm::vec3(0, 1, 0),
+					c = glm::vec3(1, 1, 0),
+					d = glm::vec3(1, 0, 0);
+				std::vector<glm::vec3> n;
+				for (int x = 0; x < N; ++x)
+				{
+					n.push_back(a);
+					n.push_back(b);
+					n.push_back(c);
+					n.push_back(c);
+					n.push_back(d);
+					n.push_back(a);
+				}
+				return n;
+			}
 
 			static std::vector<glm::vec3>			load_model(const char * filename);
 

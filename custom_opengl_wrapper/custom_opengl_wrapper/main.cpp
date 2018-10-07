@@ -51,12 +51,6 @@ void printMousePos()
 	CINFO(alib::StringFormat("x = %0 y = %1").arg(pos.x).arg(pos.y).str());
 }
 
-gfx::gui::GFXSlider * g_slider;
-void onSlide()
-{
-	CINFO(alib::StringFormat("Slider Value: %0").arg(g_slider->getValue()).str());
-}
-
 void onClosedWindow()
 {
 	CINFO("Window has closed.");
@@ -77,7 +71,7 @@ public:
 };
 
 TestClass testClass;
-
+gfx::gui::GFXWindow * window;
 void init()
 {
 	//// CREATE GLSL PROGAMS
@@ -95,6 +89,7 @@ void init()
 		->setTexHandle();
 	program_manager.getProgram(GUI_PROGRAM)
 		->setColorHandle()
+		->setFlagHandle()
 		->setTexHandle();
 
 	//// CREATE OBJECTS
@@ -111,33 +106,27 @@ void init()
 		glm::vec3(1, 1, 1)
 	);
 
-	v = gfx::PrimativeGenerator::generate_square_mesh(1, 1);
-	container = gfx::gui::GFXClickableContainer(gfx::gui::GFXMesh(
-		glm::vec2(300, 300),
-		glm::vec2(250, 250),
-		gfx::PrimativeGenerator::pack_object(&v, GEN_COLOR, gfx::WHITE),
-		glm::vec4(gfx::GREY, 0.8f)));
-	gfxManager.addComponent(&container);
-	gfx::gui::GFXButtonRect * button = new gfx::gui::GFXButtonRect(glm::vec2(), glm::vec2(100, 50));
-	button->link(&gfx::gui::GFXButtonRect::onButtonPressed, gfx::gui::ACTION(&testClass, &TestClass::print));
-	container.addComponent(button);
-	
-
 	gfx::gui::GFXColorStyle m_colorStyle = { gfx::ORANGE_A, gfx::OFF_WHITE_A, gfx::OFF_BLACK_A };
 	
-	gfx::gui::GFXWindow * window = new gfx::gui::GFXWindow(glm::vec2(50, 50), glm::vec2(300, 300));
+	window = new gfx::gui::GFXWindow(glm::vec2(50, 50), glm::vec2(300, 300));
 	window->setColorStyle(m_colorStyle);
 	window->link(&gfx::gui::GFXWindow::onClose, gfx::gui::ACTION(onClosedWindow));
+	window->setResizableVeritcal(true);
 	gfxManager.addComponent(window);
 	
-	button = new gfx::gui::GFXButtonRect(glm::vec2(50, 50), glm::vec2(100, 50));
-	button->m_isToggleable = true;
+	gfx::gui::GFXButtonRect * button = new gfx::gui::GFXButtonRect(glm::vec2(25, 50), glm::vec2(300, 50), "Press Me");
 	window->addComponent(button);
+
+	gfx::gui::GFXSpinner * spinner = new gfx::gui::GFXSpinner(glm::vec2(25, 150), glm::vec2(100, 25), 0);
+	window->addComponent(spinner);
+
+	window->validate();
 
 	//gfx::gui::GFXSlider * slider = g_slider = new gfx::gui::GFXSlider(glm::vec2(0, 100), glm::vec2(200, 50), true, 0.5f);
 	//slider->link(&gfx::gui::GFXSlider::onSlide, gfx::gui::ACTION(onSlide));
 	//window->addComponent(slider);
 
+	
 }
 
 void physics()
@@ -156,27 +145,19 @@ void draw_loop()
 
 	gfx::engine::FBO::unbind();
 
-	gfx::engine::VarHandle
-		*model_mat_handle,
-		*texture_handle,
-		*view_mat_handle,
-		*proj_mat_handle,
-		*color_handle;
+	gfx::engine::MeshHandle_T meshHandle;
 
 	content.clearAll();
 	content.loadPseudoIsometric();
 	program_manager.loadProgram(RENDER_PROGRAM);
-	model_mat_handle = program_manager.getCurrentProgram()->getModelMat4Handle();
-	texture_handle   = program_manager.getCurrentProgram()->getTexHandle();	
-	sphere.draw(0, model_mat_handle, texture_handle);
+	meshHandle = program_manager.getCurrentProgram()->getMeshHandle();
+	sphere.draw(0, meshHandle);
 
 	content.clearDepthBuffer();
 	content.loadExternalOrtho();
 	program_manager.loadProgram(GUI_PROGRAM);
-	model_mat_handle = program_manager.getCurrentProgram()->getModelMat4Handle();
-	color_handle     = program_manager.getCurrentProgram()->getColorHandle();
-	texture_handle   = program_manager.getCurrentProgram()->getTexHandle();
-	gfxManager.draw(model_mat_handle, color_handle);
+	meshHandle = program_manager.getCurrentProgram()->getMeshHandle();
+	gfxManager.draw(meshHandle);
 }
 
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
@@ -186,6 +167,7 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 		switch (button)
 		{
 		case GLFW_MOUSE_BUTTON_LEFT:
+			printMousePos();
 			break;
 		}
 	}

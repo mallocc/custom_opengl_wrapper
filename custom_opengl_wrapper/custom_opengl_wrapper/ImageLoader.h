@@ -14,7 +14,7 @@ namespace alib
 	class ImageLoader
 	{
 	public:
-		static GLuint load_texture_from_image(const char *fname);
+		static GLuint loadTextureFromImage(const char *fname);
 		static GLuint load_texture_blank();
 		static GLuint load_texture_uniform(int r, int g, int b);
 		static alib::ImageData_T get_data(const char * filename);

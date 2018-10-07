@@ -422,6 +422,7 @@ namespace
 		}
 	return n;
 }
+
 // std::vector<glm::vec3> *			PrimativeGenerator::generate_terrain(std::vector<glm::vec3> * v, int w, int h, float variation, float flattness)
 //{
 //	float m = variation / (float)max(w, h);
@@ -600,21 +601,22 @@ namespace
 		n = generate_normals(nv);
 	if ((flags & GEN_COLOR) == GEN_COLOR)
 		c = generate_colour_buffer(color, nv.size());
-	else if ((flags & GEN_COLOR_RAND) == GEN_COLOR_RAND)
+	if ((flags & GEN_COLOR_RAND) == GEN_COLOR_RAND)
 		c = random_colour_buffer(color, nv.size());
-	else if ((flags & GEN_COLOR_RAND_I) == GEN_COLOR_RAND_I)
+	if ((flags & GEN_COLOR_RAND_I) == GEN_COLOR_RAND_I)
 		c = random_intesity_colour_buffer(color, nv.size());
 	if ((flags & GEN_UVS_POLAR) == GEN_UVS_POLAR)
 		uv = generate_polar_uvs(nv);
-	else if ((flags & GEN_UVS_RECTS) == GEN_UVS_RECTS)
+	if ((flags & GEN_UVS_RECTS) == GEN_UVS_RECTS)
 		uv = generate_repeated_rect_uvs(nv);
-	else if ((flags & GEN_UVS_SPHERE) == GEN_UVS_SPHERE)
+	if ((flags & GEN_UVS_SPHERE) == GEN_UVS_SPHERE)
 		uv = generate_sphereical_uvs(nv);
 	else
 		uv = generate_null_uvs(nv.size());
 	if ((flags & GEN_TANGS) == GEN_TANGS)
 		t = generate_tangents(nv);
-
+	if ((flags & GEN_SQUAREUVS) == GEN_SQUAREUVS)
+		uv = generate_square_mesh_uvs(16, 16);
 
 	for (int i = 0; i < nv.size(); ++i)
 	{
@@ -681,7 +683,8 @@ namespace
 		uv = generate_sphereical_uvs(nv);
 	if ((flags & GEN_TANGS) == GEN_TANGS)
 		t = generate_tangents(nv);
-
+	if ((flags & GEN_SQUAREUVS) == GEN_SQUAREUVS)
+		uv = generate_square_mesh_uvs(16, 16);
 
 	for (int i = 0; i < nv.size(); ++i)
 	{

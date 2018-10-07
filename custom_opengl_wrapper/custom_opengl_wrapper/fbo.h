@@ -38,10 +38,10 @@ namespace gfx
 			FBO * add_mesh(Mesh * m);
 
 			// Just draws the meshes for this FBO
-			void draw_meshes(VarHandle * model, VarHandle * tex);
+			void draw_meshes(MeshHandle_T handles);
 
 			// Renders meshes to this FBO
-			void binding_draw_meshes(VarHandle * model, VarHandle * tex);
+			void binding_draw_meshes(MeshHandle_T handles);
 
 			// Load this FBOs texture to the shader
 			void activate_texture(VarHandle * handle);
@@ -50,7 +50,7 @@ namespace gfx
 			void deactivate_texture();
 
 			// Draw the texture on the render mesh (make sure ortho is used)
-			void draw_render_mesh(VarHandle * model_handle, VarHandle * texture_handle);
+			void draw_render_mesh(MeshHandle_T handles);
 
 			// Creates a FBO and its render texture and depth buffer
 			void get_frame_buffer(GLuint * FramebufferName, GLuint * colorTexture, GLuint *depthTexture);

@@ -12,7 +12,8 @@ namespace
 	const char * VAR_NAME_PROJ_MAT  = "u_p";
 	const char * VAR_NAME_COLOR_VEC = "u_c";
 	const char * VAR_NAME_TEX0      = "u_tex";
-	const char * VAR_NAME_TEX1      = "u_tex1";
+	const char * VAR_NAME_TEX1		= "u_tex1";
+	const char * VAR_NAME_FLAG      = "u_flag";
 }
 
 GLSLProgram * GLSLProgram::addHandle(gfx::engine::VarHandle handle)
@@ -75,6 +76,15 @@ GLSLProgram * GLSLProgram::setColorHandle()
 	return this;
 }
 
+GLSLProgram * GLSLProgram::setFlagHandle()
+{
+	VarHandle handle = VarHandle(VAR_NAME_FLAG);
+	handle.init(m_Id);
+	m_flag = handle.get_handle_id();
+	addHandle(handle);
+	return this;
+}
+
 GLSLProgram * GLSLProgram::setTexHandle()
 {
 	VarHandle handle = VarHandle(VAR_NAME_TEX0);
@@ -110,6 +120,11 @@ gfx::engine::VarHandle * GLSLProgram::getProjMat4Handle()
 gfx::engine::VarHandle * GLSLProgram::getColorHandle()
 {
 	return getHandle(m_color);
+}
+
+gfx::engine::VarHandle * GLSLProgram::getFlagHandle()
+{
+	return getHandle(m_flag);
 }
 
 gfx::engine::VarHandle * GLSLProgram::getTexHandle()
