@@ -114,19 +114,15 @@ void init()
 	window->setResizableVeritcal(true);
 	gfxManager.addComponent(window);
 	
-	gfx::gui::GFXButtonRect * button = new gfx::gui::GFXButtonRect(glm::vec2(25, 50), glm::vec2(300, 50), "Press Me");
+	gfx::gui::GFXButton * button = new gfx::gui::GFXButton(glm::vec2(25, 50), glm::vec2(300, 50), "Press Me");
 	window->addComponent(button);
 
-	gfx::gui::GFXSpinner * spinner = new gfx::gui::GFXSpinner(glm::vec2(25, 150), glm::vec2(100, 25), 0);
+	gfx::gui::GFXSpinner * spinner = new gfx::gui::GFXSpinner(glm::vec2(25, 150), glm::vec2(100, 25), 0, 0.33f);
 	window->addComponent(spinner);
 
 	window->validate();
 
-	//gfx::gui::GFXSlider * slider = g_slider = new gfx::gui::GFXSlider(glm::vec2(0, 100), glm::vec2(200, 50), true, 0.5f);
-	//slider->link(&gfx::gui::GFXSlider::onSlide, gfx::gui::ACTION(onSlide));
-	//window->addComponent(slider);
-
-	
+	//gfxManager.init();
 }
 
 void physics()

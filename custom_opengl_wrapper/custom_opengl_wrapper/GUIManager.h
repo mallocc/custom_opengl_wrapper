@@ -13,7 +13,9 @@
 #include <map>
 
 #define GFX_NULLPTR NULL
-#define GFX_NULL_ID -1
+#define GFX_NULL_ID ""
+#define GFX_DEFAULT_ID "component"
+#define GFX_NULL_INDEX -1
 #define GFX_RESIZE_NULL 0
 #define GFX_RESIZE_LEFT 1
 #define GFX_RESIZE_TOP 2
@@ -35,7 +37,7 @@ namespace gfx
 		const char * GFX_Malgun_Gothic_FONT = "textures/Malgun_Gothic.png";
 
 		// TYPEDEFS
-		typedef int GFXID;
+		typedef std::string GFXID;
 		typedef glm::vec4 GFXColorStyle[3];
 		class GFXManager;
 
@@ -229,14 +231,14 @@ namespace gfx
 			{
 				return m_id;
 			}
-			void setId(int id)
+			void setId(GFXID id)
 			{
 				m_id = id;
 			}
 
 			GFXUnit()
 			{
-				m_id = GFX_NULL_ID;
+				m_id = GFX_DEFAULT_ID;
 				m_manager = GFX_NULLPTR;
 			}
 			GFXUnit(GFXID id, GFXManager * manager)
@@ -315,6 +317,36 @@ namespace gfx
 				}
 			}
 
+			void disable()
+			{
+				m_enabled = false;
+			}
+			void enable()
+			{
+				m_enabled = true;
+			}
+			bool isEnabled()
+			{
+				return m_enabled;
+			}
+			void visible()
+			{
+				m_visible = true;
+			}
+			void invisible()
+			{
+				m_visible = true;
+			}
+			bool isVisible()
+			{
+				return m_visible;
+			}
+
+			virtual std::string toString()
+			{
+				return alib::StringFormat("id = %0 pos = %1,%2 size = %3,%4").arg(getId()).arg(m_pos.x).arg(m_pos.y).arg(m_size.x).arg(m_size.y).str();
+			}
+
 			GFXComponent()
 			{
 				inheritColorStyle(m_parent);
@@ -326,12 +358,15 @@ namespace gfx
 		protected:
 			GFXComponent * m_parent = GFX_NULLPTR;
 			GFXColorStyle m_colorStyle = { gfx::CYAN_A, gfx::WHITE_A, gfx::GREY_A };
+
+			bool m_enabled = true;
+			bool m_visible = true;
 		};
 
 		class GFXGroup
 		{
 		public:
-			GFXGroup * add(GFXComponent * component, int id, GFXComponent * parent, GFXManager * manager)
+			GFXGroup * add(GFXComponent * component, GFXID id, GFXComponent * parent, GFXManager * manager)
 			{
 				component->setId(id);
 				component->setParent(parent);
@@ -341,19 +376,18 @@ namespace gfx
 				m_group.push_back(component);
 				return this;
 			}
-
+			
 			int getComponent(GFXComponent * component)
 			{
 				for (int ix = 0; ix < m_group.size(); ++ix)
 					if (m_group[ix] == component)
 						return ix;
-				return GFX_NULL_ID;
+				return GFX_NULL_INDEX;
 			}
-
 			bool removeComponent(GFXComponent * component)
 			{
 				int id = getComponent(component);
-				if (id != GFX_NULL_ID)
+				if (id != GFX_NULL_INDEX)
 				{
 					m_group.erase(m_group.begin() + id);
 					return true;
@@ -365,22 +399,44 @@ namespace gfx
 						success |= dynamic_cast<GFXGroup*>(c)->removeComponent(component);
 				return success;
 			}
+			
+			int getComponent(GFXID id)
+			{
+				for (int ix = 0; ix < m_group.size(); ++ix)
+					if (m_group[ix]->getId() == id)
+						return ix;
+				return GFX_NULL_INDEX;
+			}
+			bool componentExists(GFXID id)
+			{
+				int index = getComponent(id);
+				if (index != GFX_NULL_INDEX)
+					return true;
+
+				bool success = false;
+				for (GFXComponent * c : m_group)
+					if (typeid(GFXGroup) == typeid(c))
+						success |= dynamic_cast<GFXGroup*>(c)->componentExists(id);
+				return success;
+			}
 
 			void drawGroup(gfx::engine::MeshHandle_T handles)
 			{
 				for (GFXComponent * component : m_group)
-					component->draw(handles);
+					if(component->isVisible())
+						component->draw(handles);
 			}
 			void drawGroup(glm::mat4 modelMat, gfx::engine::MeshHandle_T handles)
 			{
 				for (GFXComponent * component : m_group)
-					component->draw(modelMat, handles);
+					if (component->isVisible())
+						component->draw(modelMat, handles);
 			}
 
 			bool checkGroupEvents(gfx::engine::GLContent * content)
 			{
 				for (int ix = m_group.size() - 1; ix >= 0; --ix)
-					if (m_group[ix]->checkEvents(content))
+					if (m_group[ix]->isEnabled() && m_group[ix]->checkEvents(content))
 						return true;
 				return false;
 			}
@@ -419,6 +475,30 @@ namespace gfx
 					top = max(pos.y + size.y, top);
 				}
 				return glm::vec2(right + padding, top + padding);
+			}
+
+			GFXID checkId(GFXID id)
+			{
+				if (id == GFX_NULL_ID)
+					id = GFX_DEFAULT_ID;
+				if (!componentExists(id))
+					return id;
+
+				int extra = 1;
+				std::string newId;
+				do
+				{
+					newId = alib::StringFormat("%0%1").arg(id).arg(extra).str();
+					extra++;
+				} while (getComponent(newId));
+
+				return newId;
+			}
+
+			void checkGroupIds()
+			{
+				for (GFXComponent * component : m_group)
+					component->setId(checkId(component->getId()));
 			}
 
 			void bringForward(GFXComponent * component)
@@ -546,16 +626,16 @@ namespace gfx
 				m_colorHandle = colorHandle;
 			}
 
-			int getNextId()
-			{
-				return currentId++;
-			}
-
 			GFXManager * addComponent(GFXComponent * component)
 			{
-				m_group.add(component, getNextId(), GFX_NULLPTR, this);
+				m_group.add(component, component->getId(), GFX_NULLPTR, this);
 				component->init();
 				return this;
+			}
+
+			void checkIds()
+			{
+				return m_group.checkGroupIds();
 			}
 
 			bool removeComponent(GFXComponent * component)
@@ -579,7 +659,8 @@ namespace gfx
 
 			void init()
 			{
-				m_group.initGroup();
+				checkIds();
+				//m_group.initGroup();
 			}
 
 			GFXManager() {};
@@ -593,7 +674,6 @@ namespace gfx
 			gfx::engine::GLSLProgramID m_programId;
 			gfx::engine::VarHandle m_colorHandle;
 			gfx::gui::GFXGroup m_group;
-			int currentId = -1;
 		};
 
 		class GFXContainer : public GFXComponent, public GFXGroup
@@ -601,7 +681,7 @@ namespace gfx
 		public:
 			GFXContainer * addComponent(GFXComponent * component)
 			{
-				add(component, m_manager->getNextId(), this, m_manager);
+				add(component, component->getId(), this, m_manager);
 				return this;
 			}
 
@@ -696,7 +776,7 @@ namespace gfx
 			}
 
 			bool isPressed(gfx::engine::GLContent * content)
-			{
+			{ 
 				return content->getKeyboardEvents()->isKeyPressed(VK_LBUTTON) &&
 					isInside(content);
 			}
@@ -708,7 +788,7 @@ namespace gfx
 			}
 			bool isHeld(gfx::engine::GLContent * content) 
 			{
-				return m_heldCounter > 100;
+				return m_heldCounter > m_heldThreshold;
 			}
 			bool isReleased(gfx::engine::GLContent * content)
 			{
@@ -720,6 +800,24 @@ namespace gfx
 				return	glm::length(content->getMouseDelta()) > 0 && 
 					m_onDown;
 			}
+			bool isHovering(gfx::engine::GLContent * content)
+			{
+				return isInside(content);
+			}
+			bool isReleasedOver(gfx::engine::GLContent * content)
+			{
+				return isReleased(content) && isHovering(content);
+			}
+			bool isHeldOver(gfx::engine::GLContent * content)
+			{
+				return m_heldCounter > m_heldThreshold && isHovering(content);
+			}
+
+			// not finished
+			bool isDoubleClicked(gfx::engine::GLContent * content)
+			{
+				return m_doubleClickCounter - clickTime(content) < m_doubleClickThreshold;
+			}
 
 			void check(gfx::engine::GLContent * content)
 			{
@@ -730,14 +828,30 @@ namespace gfx
 
 			GFXClickable() {}
 			GFXClickable(GFXMesh mesh) : GFXComponent(mesh) {}
+		protected:
+
+			int clickTime(gfx::engine::GLContent * content)
+			{
+				if (isPressed(content))
+				{
+					if (m_doubleClickCounter == 0)
+						m_doubleClickCounter = content->getFrames();
+					else
+						return content->getFrames();
+				}
+				return 0;
+			}
 
 			bool m_onDown = false;
 			bool m_onReleased = false;
-
+						
 			int m_heldCounter = 0;
+			int m_heldThreshold = 100;
+			int m_doubleClickCounter = 0;
+			int m_doubleClickThreshold = 50;
 		};
 
-		class GFXButtonRect : public GFXClickable, public GFXLinker<GFXButtonRect>
+		class GFXButton : public GFXClickable, public GFXLinker<GFXButton>
 		{
 		public:
 
@@ -751,6 +865,7 @@ namespace gfx
 			{
 				onButtonPressed(content);
 				onButtonDown(content);
+				onButtonHeld(content);
 				onButtonReleased(content);
 				onButtonDragging(content);
 				return m_onDown;
@@ -802,7 +917,8 @@ namespace gfx
 				{
 					m_toggledState = !m_toggledState && m_isToggleable;
 					m_back->setColor(m_colorStyle[0]);
-					callTrigger(&GFXButtonRect::onButtonPressed);
+					CINFO(toString());
+					callTrigger(&GFXButton::onButtonPressed);
 				}
 			}
 			void onButtonDown(gfx::engine::GLContent * content)
@@ -810,14 +926,14 @@ namespace gfx
 				if (onDown(isDown(content)))
 				{
 					m_back->setColor(glm::vec3(m_colorStyle[0]) / 2.0f);
-					callTrigger(&GFXButtonRect::onButtonDown);
+					callTrigger(&GFXButton::onButtonDown);
 				}
 			}
 			void onButtonHeld(gfx::engine::GLContent * content)
 			{
 				if (isHeld(content))
 				{
-					callTrigger(&GFXButtonRect::onButtonDown);
+					callTrigger(&GFXButton::onButtonDown);
 				}
 			}
 			void onButtonReleased(gfx::engine::GLContent * content)
@@ -825,24 +941,30 @@ namespace gfx
 				if (onReleased(isReleased(content)))
 				{
 					m_back->setColor(m_colorStyle[0]);
-					callTrigger(&GFXButtonRect::onButtonReleased);
+					callTrigger(&GFXButton::onButtonReleased);
 				}
 			}
 			void onButtonDragging(gfx::engine::GLContent * content)
 			{
 				if (isDragging(content))
 				{
-					callTrigger(&GFXButtonRect::onButtonDragging);
+					callTrigger(&GFXButton::onButtonDragging);
 				}
 			}
 
-			GFXButtonRect(glm::vec2 pos, glm::vec2 size)
+			void setText(std::string text)
+			{
+				m_text = text;
+				m_label->setText(text);
+			}
+
+			GFXButton(glm::vec2 pos, glm::vec2 size)
 			{
 				m_pos = pos;
 				m_size = size;
 				m_text = "";
 			}
-			GFXButtonRect(glm::vec2 pos, glm::vec2 size, std::string text)
+			GFXButton(glm::vec2 pos, glm::vec2 size, std::string text)
 			{
 				m_pos = pos;
 				m_size = size;
@@ -969,7 +1091,7 @@ namespace gfx
 				onWindowMove(content);
 				onResize(content);
 				onClose(content);
-				onWindowScaled(content);				
+				onWindowScaled(content);
 				return m_components.checkEvents(content) || m_group.checkGroupEvents(content) || m_onDown;
 			}
 			void draw(gfx::engine::MeshHandle_T handles)
@@ -985,7 +1107,7 @@ namespace gfx
 
 			GFXWindow * addComponent(GFXComponent * component)
 			{
-				m_group.add(component, m_manager->getNextId(), this, m_manager);
+				m_group.add(component, component->getId(), this, m_manager);
 				validate();
 				return this;
 			}
@@ -1040,23 +1162,23 @@ namespace gfx
 				GFXColorStyle colorStyle = { glm::vec4(0,0,0,0),m_colorStyle[1],m_colorStyle[2] };
 
 				// left resize grab
-				m_leftResizeBar = new gfx::gui::GFXButtonRect(glm::vec2(), glm::vec2(m_deadzone, size.y));
+				m_leftResizeBar = new gfx::gui::GFXButton(glm::vec2(), glm::vec2(m_deadzone, size.y));
 				m_components.addComponent(m_leftResizeBar);
 				m_leftResizeBar->setColorStyle(colorStyle);
 				// right resize grab
-				m_rightResizeBar = new gfx::gui::GFXButtonRect(glm::vec2(size.x - m_deadzone, 0), glm::vec2(m_deadzone, size.y));
+				m_rightResizeBar = new gfx::gui::GFXButton(glm::vec2(size.x - m_deadzone, 0), glm::vec2(m_deadzone, size.y));
 				m_components.addComponent(m_rightResizeBar);
 				m_rightResizeBar->setColorStyle(colorStyle);
 				// bottom resize grab
-				m_bottomResizeBar = new gfx::gui::GFXButtonRect(glm::vec2(), glm::vec2(size.x, m_deadzone));
+				m_bottomResizeBar = new gfx::gui::GFXButton(glm::vec2(), glm::vec2(size.x, m_deadzone));
 				m_components.addComponent(m_bottomResizeBar);
 				m_bottomResizeBar->setColorStyle(colorStyle);
 				// bottom left resize grab
-				m_bottomLeftResizeBar = new gfx::gui::GFXButtonRect(glm::vec2(), glm::vec2(m_deadzone, m_deadzone));
+				m_bottomLeftResizeBar = new gfx::gui::GFXButton(glm::vec2(), glm::vec2(m_deadzone, m_deadzone));
 				m_components.addComponent(m_bottomLeftResizeBar);
 				m_bottomLeftResizeBar->setColorStyle(colorStyle);
 				// bottom right resize grab
-				m_bottomRightResizeBar = new gfx::gui::GFXButtonRect(glm::vec2(size.x - m_deadzone, 0), glm::vec2(m_deadzone, m_deadzone));
+				m_bottomRightResizeBar = new gfx::gui::GFXButton(glm::vec2(size.x - m_deadzone, 0), glm::vec2(m_deadzone, m_deadzone));
 				m_components.addComponent(m_bottomRightResizeBar);
 				m_bottomRightResizeBar->setColorStyle(colorStyle);
 
@@ -1064,21 +1186,21 @@ namespace gfx
 				pos.x = 0;
 				pos.y = size.y - m_topBarSize;
 				size.y = m_topBarSize;
-				m_bar = new gfx::gui::GFXButtonRect(pos, size, m_title);
+				m_bar = new gfx::gui::GFXButton(pos, size, m_title);
 				m_components.addComponent(m_bar);
 
 				// close window button
 				pos.x = size.x - m_topBarSize;
 				size.x = m_topBarSize;
 				size.y = m_topBarSize;
-				m_close = new gfx::gui::GFXButtonRect(pos, size);
+				m_close = new gfx::gui::GFXButton(pos, size);
 				m_components.addComponent(m_close);
 				colorStyle[0] = colorStyle[2];
 				m_close->setColorStyle(colorStyle);
 
 				// scale window button
 				pos.x -= m_topBarSize;
-				m_maxmin = new gfx::gui::GFXButtonRect(pos, size);
+				m_maxmin = new gfx::gui::GFXButton(pos, size);
 				m_components.addComponent(m_maxmin);
 				colorStyle[0] = colorStyle[1];
 				m_maxmin->setColorStyle(colorStyle);
@@ -1136,7 +1258,7 @@ namespace gfx
 			}
 			void onClose(gfx::engine::GLContent * content)
 			{
-				if (m_close->isPressed(content))
+				if (m_close->isReleasedOver(content))
 				{
 					callTrigger(&GFXWindow::onClose);
 					closeWindow();
@@ -1168,9 +1290,9 @@ namespace gfx
 				else
 					minimiseWindow();
 			}
-			void onWindowScaled(gfx::engine::GLContent * content)
+			void onWindowScaled(gfx::engine::GLContent * content) 
 			{
-				if (m_maxmin->isPressed(content))
+				if (m_maxmin->isReleasedOver(content))
 				{
 					toggleMaximise(content);
 					callTrigger(&GFXWindow::onWindowScaled);
@@ -1253,14 +1375,14 @@ namespace gfx
 			glm::vec2 m_oldPos;
 			glm::vec2 m_oldSize;
 			glm::vec2 m_minSize;;
-			GFXButtonRect * m_bar;
-			GFXButtonRect * m_leftResizeBar;
-			GFXButtonRect * m_rightResizeBar;
-			GFXButtonRect * m_bottomResizeBar;
-			GFXButtonRect * m_bottomLeftResizeBar;
-			GFXButtonRect * m_bottomRightResizeBar;
-			GFXButtonRect * m_close;
-			GFXButtonRect * m_maxmin;
+			GFXButton * m_bar;
+			GFXButton * m_leftResizeBar;
+			GFXButton * m_rightResizeBar;
+			GFXButton * m_bottomResizeBar;
+			GFXButton * m_bottomLeftResizeBar;
+			GFXButton * m_bottomRightResizeBar;
+			GFXButton * m_close;
+			GFXButton * m_maxmin;
 			std::string m_title;
 			GFXGroup m_group;
 			GFXContainer m_components;
@@ -1271,23 +1393,14 @@ namespace gfx
 		public:
 			GFXComponent * init()
 			{
-				glm::vec2 pos = m_pos, size = m_size;			
-
-				m_label = new GFXLabel(std::to_string(m_value), GFX_GUI_DEFAULT_FONT_SIZE);
-				m_label->init();
-				m_label->setColor(m_colorStyle[1]);
-				m_label->setPos(m_size / 2.0f);
-				m_label->center();
+				m_label = new gfx::gui::GFXButton(glm::vec2(m_size.x / 6, 0), glm::vec2(m_size.x / 6 * 4, m_size.y), " ");				
 				addComponent(m_label);
+				setValue(0);
 
-				pos = glm::vec2();
+				m_plus = new gfx::gui::GFXButton(glm::vec2(), glm::vec2(m_size.x / 6, m_size.y), "+");
+				addComponent(m_plus);				
 
-				size.x /= 3;
-				m_plus = new gfx::gui::GFXButtonRect(pos, size, "+");
-				addComponent(m_plus);
-
-				pos.x += size.x*2;
-				m_minus = new gfx::gui::GFXButtonRect(pos, size, "-");
+				m_minus = new gfx::gui::GFXButton(glm::vec2(m_size.x / 6 * 5, 0), glm::vec2(m_size.x / 6, m_size.y), "-");
 				addComponent(m_minus);				
 
 				initGroup();
@@ -1296,20 +1409,14 @@ namespace gfx
 			}
 			void validate()
 			{
-				glm::vec2 pos = m_pos, size = m_size;
+				m_label->setPos(glm::vec2(m_size.x / 6, 0));
+				m_label->setSize(glm::vec2(m_size.x / 6*4, m_size.y));
 
-				pos = glm::vec2();
+				m_plus->setPos(glm::vec2());
+				m_plus->setSize(glm::vec2(m_size.x / 6, m_size.y));
 
-				size.x /= 4;
-				m_plus->setPos(pos);
-				m_plus->setSize(size);
-
-				pos.x += size.x*3;
-				m_minus->setPos(pos);
-				m_minus->setSize(size);
-
-				m_label->setPos(m_size / 2.0f);
-				m_label->center();
+				m_minus->setPos(glm::vec2(m_size.x / 6 * 5, 0));
+				m_minus->setSize(glm::vec2(m_size.x / 6, m_size.y));
 
 				validateGroup();
 			}
@@ -1321,6 +1428,7 @@ namespace gfx
 			{
 				onIncrease(content);
 				onDecrease(content);
+				onReset(content);
 				return checkGroupEvents(content);
 			}
 			void draw(gfx::engine::MeshHandle_T handles)
@@ -1334,177 +1442,69 @@ namespace gfx
 
 			void onIncrease(gfx::engine::GLContent * content)
 			{
-				if (m_plus->isReleased(content) || m_plus->isHeld(content))
+				if (m_plus->isReleasedOver(content) || m_plus->isHeldOver(content))
 				{
-					setValue(++m_value);
+					m_value += m_inc;
+					setValue(m_value);
 					validate();
 					callTrigger(&GFXSpinner::onIncrease);
 				}
 			}
 			void onDecrease(gfx::engine::GLContent * content)
 			{
-				if (m_minus->isReleased(content) || m_minus->isHeld(content))
+				if (m_minus->isReleasedOver(content) || m_minus->isHeldOver(content))
 				{
-					setValue(--m_value);
+					m_value -= m_inc;
+					setValue(m_value);
 					validate();
 					callTrigger(&GFXSpinner::onDecrease);
 				}
 			}
+			void onReset(gfx::engine::GLContent * content)
+			{
+				if (m_label->isReleasedOver(content))
+				{
+					setValue(0);
+					validate();
+					callTrigger(&GFXSpinner::onReset);
+				}
+			}
 			
+			void setValue(float amount)
+			{
+				m_value = amount;
+				char number[24]; // dummy size, you should take care of the size!
+				sprintf(number, "%.1f", m_value);
+				m_label->setText(number);
+			}
+			float getValue()
+			{
+				return m_value;
+			}
+
 			GFXSpinner()
 			{
 				m_value = 0;
+				m_inc = 1;
 				m_pos = glm::vec2();
 				m_size = glm::vec2();
 			}
-			GFXSpinner(glm::vec2 pos, glm::vec2 size, int value)
+			GFXSpinner(glm::vec2 pos, glm::vec2 size, float value, float inc)
 			{
 				m_pos = pos;
 				m_size = size;
 				m_value = value;
+				m_inc = inc;
 			}
 		protected:
-			void setValue(int amount)
-			{
-				m_value = amount;
-				m_label->setText(std::to_string(amount));
-			}
-
-			int m_value;
-			GFXButtonRect * m_plus;
-			GFXButtonRect * m_minus;
-			GFXLabel * m_label;
+			
+			float m_value;
+			float m_inc;
+			GFXButton * m_plus;
+			GFXButton * m_minus;
+			GFXButton * m_label;
 		};
 
-/*
-		// very broken
-		class GFXSlider : public GFXClickable, public GFXLinker<GFXSlider>
-		{
-		public:
-			void update(gfx::engine::GLContent * content)
-			{
-				if (m_pin->m_onDragging)
-				{
-					m_pin->m_pos.x += content->getMouseDelta().x;
-					m_pin->m_pos.x = max(m_pin->m_pos.x, m_size.y / 2);
-					m_pin->m_pos.x = min(m_pin->m_pos.x, m_size.x - m_size.y / 2);
-				}
-				if(m_pin->m_onReleased)
-					if (m_snapToValues)
-					{
-						m_pin->m_pos.x = round(getValue() / m_snapInterval) / (1/m_snapInterval) * (m_size.x - m_size.y) + m_size.y / 2;
-					}
-			}
-			bool checkEvents(gfx::engine::GLContent * content)
-			{
-				onSliderPressed(content);
-				onSliderDown(content);
-				onSliderReleased(content);
-				onSliderDragging(content);
-				m_pin->checkEvents(content);
-				onSlide(content);
-				return m_onDown;
-			}
-			void draw(gfx::engine::VarHandle *model, gfx::engine::VarHandle *color)
-			{
-				m_back->drawMesh(getRelativeModelMat(), model, color);
-				m_rail->drawMesh(getRelativeModelMat(), model, color);
-				m_pin->draw(getRelativeModelMat(), model, color);
-			}
-			void draw(glm::mat4 modelMat, gfx::engine::VarHandle *model, gfx::engine::VarHandle *color)
-			{
-				m_back->drawMesh(modelMat* getRelativeModelMat(), model, color);
-				m_rail->drawMesh(modelMat* getRelativeModelMat(), model, color);
-				m_pin->draw(modelMat* getRelativeModelMat(), model, color);
-			}
 
-			float getValue()
-			{
-				return (m_pin->m_pos.x - m_size.y / 2) / (m_size.x - m_size.y);
-			}
-
-			GFXComponent * init()
-			{
-				float radius = m_size.y / 2;
-				m_back = new GFXRectangleMesh(glm::vec2(), m_size);
-				m_back->setColor(m_colorStyle[2]);
-				m_rail = new GFXRectangleMesh(glm::vec2(radius, radius), glm::vec2(m_size.x - radius * 2, 2));
-				m_rail->setColor(m_colorStyle[1]);
-				m_pin = new GFXButtonCircle(glm::vec2(radius, radius), glm::vec2(radius, radius));
-				m_pin->setId(m_manager->getNextId());
-				m_pin->setParent(this);
-				m_pin->setManager(m_manager);
-				m_pin->inheritColorStyle(this);
-				m_pin->init();
-				return this;
-			}
-
-			void validate()
-			{
-				float radius = m_size.y / 2;
-				m_back->setPos(glm::vec2());
-				m_back->setSize(m_size);
-
-				m_rail->setPos(glm::vec2(radius, radius));
-				m_rail->setSize(glm::vec2(m_size.x - radius * 2, 2));
-
-				m_pin->setPos(glm::vec2(round(getValue() / m_snapInterval) / (1 / m_snapInterval) * (m_size.x - m_size.y) + m_size.y / 2, radius));
-				m_pin->setSize(glm::vec2(radius, radius));
-				m_pin->validate();
-			}
-
-			GFXSlider(glm::vec2 pos, glm::vec2 size, bool snapToValues, float interval)
-			{
-				m_snapToValues = snapToValues;
-				m_snapInterval = interval;
-				m_pos = pos;
-				m_size = size;
-			}
-
-			void onSliderPressed(gfx::engine::GLContent * content)
-			{
-				if(onPressed(isPressed(content)))
-				{
-					callTrigger(&GFXSlider::onSliderPressed);
-				}
-			}
-			void onSliderDown(gfx::engine::GLContent * content)
-			{
-				if(onDown(isDown(content)))
-				{
-					callTrigger(&GFXSlider::onSliderDown);
-				}
-			}
-			void onSliderReleased(gfx::engine::GLContent * content)
-			{
-				if(onReleased(isReleased(content)))
-				{
-					callTrigger(&GFXSlider::onSliderReleased);
-				}
-			}
-			void onSliderDragging(gfx::engine::GLContent * content)
-			{
-				if (onDragging(isReleased(content)))
-				{
-					callTrigger(&GFXSlider::onSliderDragging);
-				}
-			}
-
-			void onSlide(gfx::engine::GLContent * content)
-			{
-				if (m_pin->m_onDragging)
-				{
-					callTrigger(&GFXSlider::onSlide);
-				}
-			}
-		protected:
-			bool m_snapToValues;
-			float m_snapInterval;
-
-			GFXButtonCircle * m_pin;
-			GFXRectangleMesh * m_rail;
-			GFXRectangleMesh * m_back;
-		};
-*/
 	}
 }
