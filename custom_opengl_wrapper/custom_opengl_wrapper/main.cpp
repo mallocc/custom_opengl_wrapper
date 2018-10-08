@@ -71,7 +71,7 @@ public:
 };
 
 TestClass testClass;
-gfx::gui::GFXWindow * window;
+
 void init()
 {
 	//// CREATE GLSL PROGAMS
@@ -106,23 +106,38 @@ void init()
 		glm::vec3(1, 1, 1)
 	);
 
-	gfx::gui::GFXColorStyle m_colorStyle = { gfx::ORANGE_A, gfx::OFF_WHITE_A, gfx::OFF_BLACK_A };
-	
-	window = new gfx::gui::GFXWindow(glm::vec2(50, 50), glm::vec2(300, 300));
-	window->setColorStyle(m_colorStyle);
+	gfx::gui::GFXColorStyle_T * colorStyle = new gfx::gui::GFXColorStyle_T;
+	colorStyle->colors[0] = gfx::ORANGE_A;
+	colorStyle->colors[1] = gfx::OFF_WHITE_A;
+	colorStyle->colors[2] = gfx::OFF_BLACK_A;
+	gfxManager.setColorStyle(colorStyle);
+
+	gfx::gui::GFXWindow * window = new gfx::gui::GFXWindow(glm::vec2(50, 50), glm::vec2(300, 300));
 	window->link(&gfx::gui::GFXWindow::onClose, gfx::gui::ACTION(onClosedWindow));
-	window->setResizableVeritcal(true);
-	gfxManager.addComponent(window);
-	
+	gfxManager.addComponent(window);	
 	gfx::gui::GFXButton * button = new gfx::gui::GFXButton(glm::vec2(25, 50), glm::vec2(300, 50), "Press Me");
 	window->addComponent(button);
-
 	gfx::gui::GFXSpinner * spinner = new gfx::gui::GFXSpinner(glm::vec2(25, 150), glm::vec2(100, 25), 0, 0.33f);
 	window->addComponent(spinner);
 
-	window->validate();
+	window = new gfx::gui::GFXWindow(glm::vec2(50, 50), glm::vec2(300, 300));
+	window->link(&gfx::gui::GFXWindow::onClose, gfx::gui::ACTION(onClosedWindow));
+	gfxManager.addComponent(window);
+	spinner = new gfx::gui::GFXSpinner(glm::vec2(25, 50), glm::vec2(100, 25), 0, 0.33f);
+	window->addComponent(spinner);
+	spinner = new gfx::gui::GFXSpinner(glm::vec2(100, 150), glm::vec2(100, 50), 0, 0.33f);
+	window->addComponent(spinner);
+	spinner = new gfx::gui::GFXSpinner(glm::vec2(200, 250), glm::vec2(200, 100), 0, 0.33f);
+	window->addComponent(spinner);
 
-	//gfxManager.init();
+	window = new gfx::gui::GFXWindow(glm::vec2(50, 50), glm::vec2(300, 300));
+	window->link(&gfx::gui::GFXWindow::onClose, gfx::gui::ACTION(onClosedWindow));
+	gfxManager.addComponent(window);
+	gfx::gui::GFXTextEdit * textEdit = new gfx::gui::GFXTextEdit("t", GFX_GUI_DEFAULT_FONT_SIZE, glm::vec2(25, 25), glm::vec2(300,100));
+	window->addComponent(textEdit);
+
+	gfxManager.init();
+	gfxManager.validate();
 }
 
 void physics()
@@ -153,7 +168,7 @@ void draw_loop()
 	content.loadExternalOrtho();
 	program_manager.loadProgram(GUI_PROGRAM);
 	meshHandle = program_manager.getCurrentProgram()->getMeshHandle();
-	gfxManager.draw(meshHandle);
+	gfxManager.draw(glm::mat4(1.0f), meshHandle);
 }
 
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)

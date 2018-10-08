@@ -16,6 +16,7 @@
 #define GFX_NULL_ID ""
 #define GFX_DEFAULT_ID "component"
 #define GFX_NULL_INDEX -1
+#define GFX_NULL_COLORSTYLE NULL
 #define GFX_RESIZE_NULL 0
 #define GFX_RESIZE_LEFT 1
 #define GFX_RESIZE_TOP 2
@@ -26,7 +27,7 @@
 #define GFX_GUI_SHADER_FONT 1
 #define GFX_GUI_SHADER_TEXTURE 2
 #define GFX_GUI_DEFAULT_FONT_SIZE 20
-#define GFX_GUI_DEFAULT_PADDING 25
+#define GFX_GUI_DEFAULT_PADDING 50
 
 namespace gfx
 {
@@ -38,7 +39,10 @@ namespace gfx
 
 		// TYPEDEFS
 		typedef std::string GFXID;
-		typedef glm::vec4 GFXColorStyle[3];
+		struct GFXColorStyle_T
+		{
+			glm::vec4 colors[3];
+		};
 		class GFXManager;
 
 		class GFXFont
@@ -292,28 +296,32 @@ namespace gfx
 				m_parent = parent;
 			}
 
-			virtual GFXComponent * init() = 0;
+			virtual GFXComponent * init(GFXManager * manager, GFXComponent * parent) = 0;
 			virtual void validate() = 0;
 			virtual void update(gfx::engine::GLContent * content) = 0;
 			virtual bool checkEvents(gfx::engine::GLContent * content) = 0;
-			virtual void draw(gfx::engine::MeshHandle_T handles) = 0;
 			virtual void draw(glm::mat4 modelMat, gfx::engine::MeshHandle_T handles) = 0;
 
-			GFXComponent * setColorStyle(GFXColorStyle colorStyle)
+			GFXComponent * setColorStyle(GFXColorStyle_T * colorStyle)
 			{
-				m_colorStyle[0] = colorStyle[0];
-				m_colorStyle[1] = colorStyle[1];
-				m_colorStyle[2] = colorStyle[2];
+				if (m_colorStyle != GFX_NULL_COLORSTYLE)
+					delete(m_colorStyle);
+				m_colorStyle = new GFXColorStyle_T;
+				m_colorStyle->colors[0] = colorStyle->colors[0];
+				m_colorStyle->colors[1] = colorStyle->colors[1];
+				m_colorStyle->colors[2] = colorStyle->colors[2];
 				return this;
 			}
-
-			void inheritColorStyle(GFXComponent * parent)
+			GFXColorStyle_T * getColorStyle()
 			{
-				if (parent != GFX_NULLPTR)
+				return m_colorStyle;
+			}
+
+			void inheritColorStyle()
+			{
+				if (m_parent != GFX_NULLPTR)
 				{
-					m_colorStyle[0] = parent->m_colorStyle[0];
-					m_colorStyle[1] = parent->m_colorStyle[1];
-					m_colorStyle[2] = parent->m_colorStyle[2];
+					m_colorStyle = m_parent->getColorStyle();
 				}
 			}
 
@@ -349,15 +357,13 @@ namespace gfx
 
 			GFXComponent()
 			{
-				inheritColorStyle(m_parent);
 			}
 			GFXComponent(GFXMesh mesh) : GFXUnit(), GFXMesh(mesh)
 			{
-				inheritColorStyle(m_parent);
 			}
 		protected:
 			GFXComponent * m_parent = GFX_NULLPTR;
-			GFXColorStyle m_colorStyle = { gfx::CYAN_A, gfx::WHITE_A, gfx::GREY_A };
+			GFXColorStyle_T * m_colorStyle = GFX_NULL_COLORSTYLE;
 
 			bool m_enabled = true;
 			bool m_visible = true;
@@ -366,13 +372,8 @@ namespace gfx
 		class GFXGroup
 		{
 		public:
-			GFXGroup * add(GFXComponent * component, GFXID id, GFXComponent * parent, GFXManager * manager)
+			GFXGroup * add(GFXComponent * component)
 			{
-				component->setId(id);
-				component->setParent(parent);
-				component->setManager(manager);
-				component->inheritColorStyle(parent);
-				component->init();
 				m_group.push_back(component);
 				return this;
 			}
@@ -395,7 +396,6 @@ namespace gfx
 
 				bool success = false;
 				for (GFXComponent * c : m_group)
-					if (typeid(GFXGroup) == typeid(c))
 						success |= dynamic_cast<GFXGroup*>(c)->removeComponent(component);
 				return success;
 			}
@@ -415,17 +415,10 @@ namespace gfx
 
 				bool success = false;
 				for (GFXComponent * c : m_group)
-					if (typeid(GFXGroup) == typeid(c))
 						success |= dynamic_cast<GFXGroup*>(c)->componentExists(id);
 				return success;
 			}
 
-			void drawGroup(gfx::engine::MeshHandle_T handles)
-			{
-				for (GFXComponent * component : m_group)
-					if(component->isVisible())
-						component->draw(handles);
-			}
 			void drawGroup(glm::mat4 modelMat, gfx::engine::MeshHandle_T handles)
 			{
 				for (GFXComponent * component : m_group)
@@ -447,10 +440,10 @@ namespace gfx
 					component->update(content);
 			}
 
-			void initGroup()
+			void initGroup(GFXManager * manager, GFXComponent * parent)
 			{
 				for (GFXComponent * component : m_group)
-					component->init();
+					component->init(manager, parent);
 			}
 
 			void validateGroup()
@@ -477,7 +470,7 @@ namespace gfx
 				return glm::vec2(right + padding, top + padding);
 			}
 
-			GFXID checkId(GFXID id)
+			GFXID verifyId(GFXID id)
 			{
 				if (id == GFX_NULL_ID)
 					id = GFX_DEFAULT_ID;
@@ -493,12 +486,6 @@ namespace gfx
 				} while (getComponent(newId));
 
 				return newId;
-			}
-
-			void checkGroupIds()
-			{
-				for (GFXComponent * component : m_group)
-					component->setId(checkId(component->getId()));
 			}
 
 			void bringForward(GFXComponent * component)
@@ -527,17 +514,191 @@ namespace gfx
 						break;
 					}
 			}
+			void bringToFront(GFXComponent * component)
+			{
+				for (int i = 0; i < m_group.size(); ++i)
+					if (m_group[i] == component)
+					{
+						if (i != m_group.size() - 1)
+						{
+							m_group.erase(m_group.begin() + i);
+							m_group.push_back(component);
+						}
+						break;
+					}
+			}
 		private:
 			std::vector<GFXComponent*> m_group;
 		};
 
+		// MANAGERS
+		class GFXManager : public GFXComponent, public GFXGroup
+		{
+		public:
+			gfx::engine::FBOID getFBOId()
+			{
+				return m_fboId;
+			}
+			void setFBOId(gfx::engine::FBOID id)
+			{
+				m_fboId = id;
+			}
+
+			gfx::engine::GLSLProgramID getProgramId()
+			{
+				return m_programId;
+			}
+			void setProgramId(gfx::engine::GLSLProgramID id)
+			{
+				m_programId = id;
+			}
+
+			GFXComponent * addComponent(GFXComponent * component)
+			{
+				add(component);
+				return this;
+			}
+
+			GFXID addId(GFXID id)
+			{
+				//id = verifyId(id);
+				//gfxids.push_back(id);
+				return id;
+			}
+
+			void setId(GFXID id, GFXComponent * component)
+			{
+				for (int ix = 0; ix < m_gfxids.size(); ++ix)
+					if (m_gfxids[ix] == component->getId())
+						m_gfxids.erase(m_gfxids.begin() + ix);
+				component->setId(addId(id));
+			}
+
+			bool checkEvents(gfx::engine::GLContent * content)
+			{
+				return checkGroupEvents(content);
+			}
+			void update(gfx::engine::GLContent * content)
+			{
+				updateGroup(content);
+			}
+
+			void draw(glm::mat4 modelMat, gfx::engine::MeshHandle_T handles)
+			{
+				drawGroup(modelMat, handles);
+			}
+
+			void validate()
+			{
+				validateGroup();
+			}
+
+			GFXComponent * init(GFXManager * manager, GFXComponent * parent)
+			{
+				initGroup(manager, parent);
+				return this;
+			}
+
+			void init()
+			{
+				init(this, this);
+			}
+
+			void setFocused(GFXComponent * component)
+			{
+				m_focused = component;
+			}
+			bool isFocused(GFXComponent * component)
+			{
+				return component == m_focused;
+			}
+
+			GFXManager() {};
+			GFXManager(gfx::engine::GLSLProgramID programId, gfx::engine::FBOID fboId)
+			{
+				m_fboId = fboId;
+				m_programId = programId;
+			}
+		protected:
+			gfx::engine::FBOID m_fboId;
+			gfx::engine::GLSLProgramID m_programId;
+			std::vector<GFXID> m_gfxids;
+			GFXComponent * m_focused = GFX_NULLPTR;
+		};
+
+		class GFXContainer : public GFXComponent, public GFXGroup
+		{
+		public:
+			GFXContainer * addComponent(GFXComponent * component)
+			{
+				add(component);
+				return this;
+			}
+
+			GFXComponent * init(GFXManager * manager, GFXComponent * parent)
+			{
+				setManager(manager);
+				setParent(parent);
+				setId(manager->addId("container"));
+				if (m_colorStyle == GFX_NULL_COLORSTYLE)
+					inheritColorStyle();
+				initGroup(manager, this);
+				return this;
+			}
+
+			void validate()
+			{
+				validateGroup();
+			}
+
+			void update(gfx::engine::GLContent * content)
+			{
+				updateGroup(content);
+			}
+
+			bool checkEvents(gfx::engine::GLContent * content)
+			{
+				return checkGroupEvents(content);
+			}
+
+			void draw(glm::mat4 modelMat, gfx::engine::MeshHandle_T handles)
+			{
+				drawMesh(modelMat, handles);
+				drawGroup(modelMat * getRelativeModelMat(), handles);
+			}
+
+			GFXContainer() : GFXComponent() {}
+			GFXContainer(glm::vec2 pos, glm::vec2 size, glm::vec4 color) : GFXComponent() 
+			{
+				std::vector<glm::vec3> v = gfx::PrimativeGenerator::generate_square_mesh(1, 1);
+				GFXMesh miniMesh = gfx::gui::GFXMesh(
+					pos,
+					size,
+					gfx::PrimativeGenerator::pack_object(&v, GEN_COLOR, gfx::WHITE),
+					color);
+				m_pos = miniMesh.m_pos;
+				m_size = miniMesh.m_size;
+				m_vao = miniMesh.m_vao;
+				m_buffer = miniMesh.m_buffer;
+				m_dataSize = miniMesh.m_dataSize;
+				m_rotation = miniMesh.m_rotation;
+				m_theta = miniMesh.m_theta;
+				m_color = miniMesh.m_color;
+			}
+			GFXContainer(GFXMesh mesh) : GFXComponent(mesh) {}
+		private:
+		};
+		
 
 		class GFXLabel : public GFXComponent
 		{
 		public:
-			
-			GFXComponent * init()
+
+			GFXComponent * init(GFXManager * manager, GFXComponent * parent)
 			{
+				setManager(manager);
+				setParent(parent);
+				setId(manager->addId("label"));
 				m_font = GFXFont(GFX_Courier_FONT);
 				return this;
 			}
@@ -553,15 +714,10 @@ namespace gfx
 			{
 				return false;
 			}
-			void draw(gfx::engine::MeshHandle_T handles)
-			{
-				for (int ix = 0; ix < m_text.length(); ix++)
-					m_font.draw(m_text[ix], glm::vec2(ix * m_size.x/2, m_size.y/2) + m_pos, m_size, handles);
-			}
 			void draw(glm::mat4 modelMat, gfx::engine::MeshHandle_T handles)
 			{
 				for (int ix = 0; ix < m_text.length(); ix++)
-					m_font.draw(m_text[ix], modelMat, glm::vec2(ix * m_size.x/2, m_size.y/2) + m_pos, m_size, handles);
+					m_font.draw(m_text[ix], modelMat, glm::vec2(ix * m_size.x / 2, m_size.y / 2) + m_pos, m_size, handles);
 			}
 
 			float getLength()
@@ -595,151 +751,6 @@ namespace gfx
 			std::string m_text;
 		};
 
-		// MANAGERS
-		class GFXManager
-		{
-		public:
-			gfx::engine::FBOID getFBOId()
-			{
-				return m_fboId;
-			}
-			void setFBOId(gfx::engine::FBOID id)
-			{
-				m_fboId = id;
-			}
-
-			gfx::engine::GLSLProgramID getProgramId()
-			{
-				return m_programId;
-			}
-			void setProgramId(gfx::engine::GLSLProgramID id)
-			{
-				m_programId = id;
-			}
-
-			gfx::engine::VarHandle getColorHandle()
-			{
-				return m_colorHandle;
-			}
-			void setColorHandle(gfx::engine::VarHandle colorHandle)
-			{
-				m_colorHandle = colorHandle;
-			}
-
-			GFXManager * addComponent(GFXComponent * component)
-			{
-				m_group.add(component, component->getId(), GFX_NULLPTR, this);
-				component->init();
-				return this;
-			}
-
-			void checkIds()
-			{
-				return m_group.checkGroupIds();
-			}
-
-			bool removeComponent(GFXComponent * component)
-			{
-				return m_group.removeComponent(component);
-			}
-
-			void checkEvents(gfx::engine::GLContent * content)
-			{
-				m_group.checkGroupEvents(content);
-			}
-			void update(gfx::engine::GLContent * content)
-			{
-				m_group.updateGroup(content);
-			}
-
-			void draw(gfx::engine::MeshHandle_T handles)
-			{
-				m_group.drawGroup(handles);
-			}
-
-			void init()
-			{
-				checkIds();
-				//m_group.initGroup();
-			}
-
-			GFXManager() {};
-			GFXManager(gfx::engine::GLSLProgramID programId, gfx::engine::FBOID fboId)
-			{
-				m_fboId = fboId;
-				m_programId = programId;
-			}
-		protected:
-			gfx::engine::FBOID m_fboId;
-			gfx::engine::GLSLProgramID m_programId;
-			gfx::engine::VarHandle m_colorHandle;
-			gfx::gui::GFXGroup m_group;
-		};
-
-		class GFXContainer : public GFXComponent, public GFXGroup
-		{
-		public:
-			GFXContainer * addComponent(GFXComponent * component)
-			{
-				add(component, component->getId(), this, m_manager);
-				return this;
-			}
-
-			GFXComponent * init()
-			{
-				initGroup();
-				return this;
-			}
-
-			void validate()
-			{
-				validateGroup();
-			}
-
-			void update(gfx::engine::GLContent * content)
-			{
-				updateGroup(content);
-			}
-
-			bool checkEvents(gfx::engine::GLContent * content)
-			{
-				return checkGroupEvents(content);
-			}
-
-			void draw(gfx::engine::MeshHandle_T handles)
-			{
-				drawMesh(handles);
-				drawGroup(getRelativeModelMat(), handles);
-			}
-			void draw(glm::mat4 modelMat, gfx::engine::MeshHandle_T handles)
-			{
-				drawMesh(modelMat, handles);
-				drawGroup(modelMat * getRelativeModelMat(), handles);
-			}
-
-			GFXContainer() : GFXComponent() {}
-			GFXContainer(glm::vec2 pos, glm::vec2 size, glm::vec4 color) : GFXComponent() 
-			{
-				inheritColorStyle(m_parent);
-				std::vector<glm::vec3> v = gfx::PrimativeGenerator::generate_square_mesh(1, 1);
-				GFXMesh miniMesh = gfx::gui::GFXMesh(
-					pos,
-					size,
-					gfx::PrimativeGenerator::pack_object(&v, GEN_COLOR, gfx::WHITE),
-					color);
-				m_pos = miniMesh.m_pos;
-				m_size = miniMesh.m_size;
-				m_vao = miniMesh.m_vao;
-				m_buffer = miniMesh.m_buffer;
-				m_dataSize = miniMesh.m_dataSize;
-				m_rotation = miniMesh.m_rotation;
-				m_theta = miniMesh.m_theta;
-				m_color = miniMesh.m_color;
-			}
-			GFXContainer(GFXMesh mesh) : GFXComponent(mesh) {}
-		private:
-		};
-
 
 		// CLICKABLES
 		class GFXClickable : public GFXComponent
@@ -750,6 +761,7 @@ namespace gfx
 				if (isTrue)
 				{
 					m_onDown = true;
+					m_manager->setFocused(this);
 				}
 				return isTrue;
 			}
@@ -813,6 +825,15 @@ namespace gfx
 				return m_heldCounter > m_heldThreshold && isHovering(content);
 			}
 
+			bool isKeyPressed(gfx::engine::GLContent * content, char key)
+			{
+				return content->getKeyboardEvents()->isKeyPressed(key);
+			}
+			bool isKeyReleased(gfx::engine::GLContent * content, char key)
+			{
+				return content->getKeyboardEvents()->isKeyReleased(key);
+			}
+
 			// not finished
 			bool isDoubleClicked(gfx::engine::GLContent * content)
 			{
@@ -849,7 +870,12 @@ namespace gfx
 			int m_heldThreshold = 100;
 			int m_doubleClickCounter = 0;
 			int m_doubleClickThreshold = 50;
+
+			//bool m_onDownKey = false;
+			//bool m_onReleasedKey = false;
 		};
+
+
 
 		class GFXButton : public GFXClickable, public GFXLinker<GFXButton>
 		{
@@ -859,23 +885,25 @@ namespace gfx
 			{
 				m_back->setPos(m_pos);
 				if(m_toggledState)
-					m_back->setColor(glm::vec3(m_colorStyle[0]) / 2.0f);
+					m_back->setColor(glm::vec3(m_colorStyle->colors[0]) / 2.0f);
+				
+				//if (isHovering(content))
+				//	m_back->setColor(m_colorStyle->colors[0] * 1.5f);
+				//else
+				//	m_back->setColor(m_colorStyle->colors[0]);
+				if (isDown(content))
+					m_back->setColor(m_colorStyle->colors[0] / 1.5f);
+				else
+					m_back->setColor(m_colorStyle->colors[0]);
+					
 			}
 			bool checkEvents(gfx::engine::GLContent * content)
 			{
+				check(content);
 				onButtonPressed(content);
 				onButtonDown(content);
-				onButtonHeld(content);
 				onButtonReleased(content);
-				onButtonDragging(content);
 				return m_onDown;
-			}
-			void draw(gfx::engine::MeshHandle_T handles)
-			{
-				m_back->setPos(m_pos);
-				m_back->drawMesh(handles);
-				if (m_text != "")
-					m_label->draw(handles);
 			}
 			void draw(glm::mat4 modelMat, gfx::engine::MeshHandle_T handles)
 			{
@@ -885,15 +913,21 @@ namespace gfx
 					 m_label->draw(modelMat, handles);
 			}
 		
-			GFXComponent * init()
+			GFXComponent * init(GFXManager * manager, GFXComponent * parent)
 			{
+				setManager(manager);
+				setParent(parent);
+				setId(manager->addId("button"));
+				if (m_colorStyle == GFX_NULL_COLORSTYLE)
+					inheritColorStyle();
+
 				m_back = new GFXRectangleMesh(m_pos, m_size);
-				m_back->setColor(m_colorStyle[0]);
+				m_back->setColor(m_colorStyle->colors[0]);
 				if (m_text != "")
 				{
 					m_label = new GFXLabel(m_text, GFX_GUI_DEFAULT_FONT_SIZE);
-					m_label->init();
-					m_label->setColor(m_colorStyle[2]);
+					m_label->init(manager, this);
+					m_label->setColor(m_colorStyle->colors[2]);
 					m_label->setPos(m_pos + m_size / 2.0f);
 					m_label->center();
 				}
@@ -913,43 +947,31 @@ namespace gfx
 			
 			void onButtonPressed(gfx::engine::GLContent * content)
 			{
-				if (onPressed(isPressed(content)))
+				if (isPressed(content))
 				{
 					m_toggledState = !m_toggledState && m_isToggleable;
-					m_back->setColor(m_colorStyle[0]);
-					CINFO(toString());
+					CINFO(m_id);
 					callTrigger(&GFXButton::onButtonPressed);
 				}
 			}
 			void onButtonDown(gfx::engine::GLContent * content)
 			{
-				if (onDown(isDown(content)))
-				{
-					m_back->setColor(glm::vec3(m_colorStyle[0]) / 2.0f);
-					callTrigger(&GFXButton::onButtonDown);
-				}
-			}
-			void onButtonHeld(gfx::engine::GLContent * content)
-			{
-				if (isHeld(content))
+				if (isDown(content))
 				{
 					callTrigger(&GFXButton::onButtonDown);
 				}
 			}
 			void onButtonReleased(gfx::engine::GLContent * content)
 			{
-				if (onReleased(isReleased(content)))
+				if (isReleased(content))
 				{
-					m_back->setColor(m_colorStyle[0]);
 					callTrigger(&GFXButton::onButtonReleased);
 				}
 			}
-			void onButtonDragging(gfx::engine::GLContent * content)
+			
+			bool isToggled()
 			{
-				if (isDragging(content))
-				{
-					callTrigger(&GFXButton::onButtonDragging);
-				}
+				return m_toggledState;
 			}
 
 			void setText(std::string text)
@@ -971,9 +993,11 @@ namespace gfx
 				m_text = text;
 			}
 
+			
+		protected:			
 			bool m_toggledState = false;
 			bool m_isToggleable = false;
-		protected:			
+
 			std::string	m_text;
 			GFXRectangleMesh * m_back;
 			GFXLabel * m_label;
@@ -1092,29 +1116,29 @@ namespace gfx
 				onResize(content);
 				onClose(content);
 				onWindowScaled(content);
-				return m_components.checkEvents(content) || m_group.checkGroupEvents(content) || m_onDown;
-			}
-			void draw(gfx::engine::MeshHandle_T handles)
-			{				
-				m_components.draw(handles);
-				m_group.drawGroup(getRelativeModelMat(), handles);
+				bool focused = m_components.checkEvents(content) || m_group.checkGroupEvents(content) || m_onDown;
+				if(focused) 
+					focus();
+				return focused;
 			}
 			void draw(glm::mat4 modelMat, gfx::engine::MeshHandle_T handles)
 			{
-				m_components.draw(modelMat, handles);
+				m_components.draw(modelMat*getRelativeModelMat(), handles);
 				m_group.drawGroup(modelMat*getRelativeModelMat(), handles);
 			}
 
 			GFXWindow * addComponent(GFXComponent * component)
 			{
-				m_group.add(component, component->getId(), this, m_manager);
-				validate();
+				m_group.add(component);
 				return this;
 			}
 
 			void validate()
 			{
-				glm::vec2 pos = m_pos, size = m_size;
+				m_minSize = m_group.getMinimumBounds(GFX_GUI_DEFAULT_PADDING);
+				inflateToContent();
+
+				glm::vec2 pos = glm::vec2(), size = m_size;
 
 				m_components.setPos(pos);
 				m_components.setSize(size);
@@ -1139,27 +1163,32 @@ namespace gfx
 
 				pos.x -= 20;
 				m_maxmin->setPos(pos);
-				m_maxmin->setSize(size);
+				m_maxmin->setSize(size);			
 
 				m_group.validateGroup();
-				m_components.validate();
-
-				m_minSize = m_group.getMinimumBounds(GFX_GUI_DEFAULT_PADDING);
-				inflateToContent();
+				m_components.validate();				
 			}
 
-			GFXComponent * init()
+			GFXComponent * init(GFXManager * manager, GFXComponent * parent)
 			{
-				glm::vec2 pos = m_pos, size = m_size;
+				setManager(manager);
+				setParent(parent);
+				setId(manager->addId("window"));
+				if (m_colorStyle == GFX_NULL_COLORSTYLE)
+					inheritColorStyle();
+
+				glm::vec2 pos = glm::vec2(), size = m_size;
 
 				// window ui components container
-				m_components = gfx::gui::GFXContainer(pos, size, m_colorStyle[2]);
+				m_components = gfx::gui::GFXContainer(pos, size, m_colorStyle->colors[2]);
 				m_components.setAlpha(0.8f);
-				m_components.setManager(m_manager);
 				m_components.setColorStyle(m_colorStyle);
 
 				// alter colorstyle for each component
-				GFXColorStyle colorStyle = { glm::vec4(0,0,0,0),m_colorStyle[1],m_colorStyle[2] };
+				GFXColorStyle_T * colorStyle = new GFXColorStyle_T;
+				colorStyle->colors[0] = glm::vec4(0);
+				colorStyle->colors[1] = m_colorStyle->colors[1];
+				colorStyle->colors[2] = m_colorStyle->colors[2];
 
 				// left resize grab
 				m_leftResizeBar = new gfx::gui::GFXButton(glm::vec2(), glm::vec2(m_deadzone, size.y));
@@ -1195,20 +1224,19 @@ namespace gfx
 				size.y = m_topBarSize;
 				m_close = new gfx::gui::GFXButton(pos, size);
 				m_components.addComponent(m_close);
-				colorStyle[0] = colorStyle[2];
+				colorStyle->colors[0] = colorStyle->colors[2];
 				m_close->setColorStyle(colorStyle);
 
 				// scale window button
 				pos.x -= m_topBarSize;
 				m_maxmin = new gfx::gui::GFXButton(pos, size);
 				m_components.addComponent(m_maxmin);
-				colorStyle[0] = colorStyle[1];
+				colorStyle->colors[0] = colorStyle->colors[1];
 				m_maxmin->setColorStyle(colorStyle);
 				
 				// initialise container
-				m_components.init();
-
-				m_group = GFXGroup();
+				m_components.init(manager, this);
+				m_group.initGroup(manager, this);
 
 				return this;
 			}
@@ -1328,6 +1356,11 @@ namespace gfx
 				m_isResizableY = resizeable;
 			}
  
+			void focus()
+			{
+				if(m_parent != GFX_NULLPTR)
+						dynamic_cast<GFXGroup*>(m_parent)->bringToFront(this);
+			}
 
 			GFXWindow(glm::vec2 pos, glm::vec2 size)
 			{
@@ -1391,11 +1424,16 @@ namespace gfx
 		class GFXSpinner : public GFXContainer, public GFXLinker<GFXSpinner>
 		{
 		public:
-			GFXComponent * init()
+			GFXComponent * init(GFXManager * manager, GFXComponent * parent)
 			{
-				m_label = new gfx::gui::GFXButton(glm::vec2(m_size.x / 6, 0), glm::vec2(m_size.x / 6 * 4, m_size.y), " ");				
+				setManager(manager);
+				setParent(parent);
+				setId(manager->addId("spinner"));
+				if (m_colorStyle == GFX_NULL_COLORSTYLE)
+					inheritColorStyle();
+
+				m_label = new gfx::gui::GFXButton(glm::vec2(m_size.x / 6, 0), glm::vec2(m_size.x / 6 * 4, m_size.y), "0");				
 				addComponent(m_label);
-				setValue(0);
 
 				m_plus = new gfx::gui::GFXButton(glm::vec2(), glm::vec2(m_size.x / 6, m_size.y), "+");
 				addComponent(m_plus);				
@@ -1403,7 +1441,7 @@ namespace gfx
 				m_minus = new gfx::gui::GFXButton(glm::vec2(m_size.x / 6 * 5, 0), glm::vec2(m_size.x / 6, m_size.y), "-");
 				addComponent(m_minus);				
 
-				initGroup();
+				initGroup(manager, this);
 
 				return this;
 			}
@@ -1430,10 +1468,6 @@ namespace gfx
 				onDecrease(content);
 				onReset(content);
 				return checkGroupEvents(content);
-			}
-			void draw(gfx::engine::MeshHandle_T handles)
-			{
-				drawGroup(getRelativeModelMat(), handles);
 			}
 			void draw(glm::mat4 modelMat, gfx::engine::MeshHandle_T handles)
 			{
@@ -1505,6 +1539,133 @@ namespace gfx
 			GFXButton * m_label;
 		};
 
+		class GFXTextEdit : public GFXClickable
+		{
+		public:
+
+			GFXComponent * init(GFXManager * manager, GFXComponent * parent)
+			{
+				setManager(manager);
+				setParent(parent);
+				setId(manager->addId("textEdit"));
+				m_font = GFXFont(GFX_Courier_FONT);
+				return this;
+			}
+			void validate()
+			{
+
+			}
+			void update(gfx::engine::GLContent * content)
+			{
+
+			}
+			bool checkEvents(gfx::engine::GLContent * content)
+			{
+				check(content);
+				keyTyped(content);
+				returnPressed(content);
+				backspacePressed(content);
+				return m_onDown;
+			}
+			void draw(glm::mat4 modelMat, gfx::engine::MeshHandle_T handles)
+			{
+				bool endOfText = true;
+				float ix = 0, iy = m_size.y; int ic = 0;
+				for (ix = 0, iy = m_size.y - m_fontSize, ic = 0; ic < m_text.length(); ix += m_fontSize / 2.0f, ic++)
+				{			
+					if (ix >= m_size.x - m_fontSize/2)
+					{
+						iy -= m_fontSize;
+						ix = 0;		
+						if ((m_text[ic]) == ' ')
+							ic++;
+					}
+					while (m_text[ic] == '\n')
+					{
+						iy -= m_fontSize;
+						ix = 0;
+						ic++;		
+						if (iy <= 0)
+						{
+							endOfText = false;
+							break;
+						}
+					}
+					if (iy <= 0)
+					{
+						endOfText = false;
+						break;
+					}
+					m_font.draw(m_text[ic], modelMat, glm::vec2(ix, iy) + m_pos, glm::vec2(m_fontSize), handles);
+					if (m_cursorPosition == ic && m_manager->isFocused(this))
+						m_font.draw('|', modelMat, glm::vec2(ix + m_fontSize / 3, iy - m_fontSize / 3) + m_pos, glm::vec2(m_fontSize, m_fontSize * 1.5), handles);
+				}
+				if(m_manager->isFocused(this))
+					if (m_cursorPosition == -1)
+						m_font.draw('|', modelMat, glm::vec2(ix - m_fontSize / 3, iy - m_fontSize / 3) + m_pos, glm::vec2(m_fontSize, m_fontSize * 1.5), handles);
+					else if (!endOfText)
+						m_font.draw('|', modelMat, glm::vec2(m_size.x - m_fontSize / 2, iy - m_fontSize / 3 + m_fontSize) + m_pos, glm::vec2(m_fontSize, m_fontSize * 1.5), handles);
+			}
+			
+			void setText(std::string text)
+			{
+				m_text = text;
+			}
+			std::string getText()
+			{
+				return m_text;
+			}
+
+			void setColor(glm::vec4 color)
+			{
+				m_font.setColor(color);
+			}
+
+			void keyTyped(gfx::engine::GLContent * content)
+			{
+				char key = content->getKeyboardEvents()->getChar();
+				if (key != -1 && m_manager->isFocused(this))
+				{
+					CINFO(alib::StringFormat("%0").arg(key).str());
+					m_text.push_back(key);
+					m_cursorPosition++;
+				}
+			}
+			void returnPressed(gfx::engine::GLContent * content)
+			{
+				if (isKeyPressed(content, VK_RETURN) && m_manager->isFocused(this))
+				{
+					m_text.push_back('\n');
+					m_cursorPosition++;
+				}
+			}
+			void backspacePressed(gfx::engine::GLContent * content)
+			{
+				if (isKeyPressed(content, VK_BACK) && m_manager->isFocused(this))
+				{
+					if (m_text.size() > 0)
+					{
+						m_text = m_text.erase(m_cursorPosition);
+						m_cursorPosition--;
+					}
+				}
+			}
+
+			GFXTextEdit(std::string text, int fontSize, glm::vec2 pos, glm::vec2 size)
+			{
+				m_fontSize = fontSize;
+				m_text = alib::StringFormat(text).str();
+				m_cursorPosition = m_text.size() - 1;
+				m_pos = pos;
+				m_size = size;
+			}
+
+			int m_fontSize = GFX_GUI_DEFAULT_FONT_SIZE;
+			int m_cursorPosition = 0;
+			bool m_isMultiline = false;
+			GFXFont m_font;
+			std::string m_text;
+		};
 
 	}
 }
