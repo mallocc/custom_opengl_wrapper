@@ -288,4 +288,5 @@ __pycache__/
 *.xsd.cs
 
 #un-ignore sub directory
-!/comp3214_cwk3/comp3214_cwk3/include/
+!/custom_opengl_wrapper/custom_opengl_wrapper/include/
+!/custom_opengl_wrapper/custom_opengl_wrapper/include/gl/glew/glew-2.1.0/bin
