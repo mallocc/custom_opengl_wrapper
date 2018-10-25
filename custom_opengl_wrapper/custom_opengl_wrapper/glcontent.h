@@ -109,12 +109,15 @@ namespace gfx
 			//GL window initialise
 			GLFWwindow *				initWindow(gfx::engine::GLContentInit init, GLFWkeyfun key_func, GLFWmousebuttonfun mouse_func);
 
+			void handleKeyEvent();
 		public:
 			//constructors
 
 			GLContent();
 
 			GLContent(glm::vec3 windowSize, glm::vec3 eyePos, glm::vec3 eyeLookPos, glm::vec3 up, float fov, float aspectRatio, float nearZ, float farZ);
+
+			char m_keyDown = NULL;
 
 		private:
 			GLFWwindow * m_window;
@@ -146,6 +149,8 @@ namespace gfx
 			glm::vec2 m_oldMousPos, m_newMousePos;
 
 			int m_frames = 0;
+
+			
 		};
 
 	}

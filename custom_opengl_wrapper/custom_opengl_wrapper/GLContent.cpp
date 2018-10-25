@@ -177,7 +177,7 @@ glm::vec2 GLContent::getMousePos()
 {
 	double xpos, ypos;
 	glfwGetCursorPos(m_window, &xpos, &ypos);
-	return glm::vec2(xpos, -ypos + m_windowSize.y);
+	return glm::vec2(xpos, ypos);
 }
 glm::vec2 GLContent::getMouseDelta()
 {
@@ -193,9 +193,9 @@ glm::mat4 GLContent::getExternalOrtho()
 {
 	return glm::ortho(
 		0.0f,
-		m_windowSize.x,
-		0.0f,
+		m_windowSize.x,		
 		m_windowSize.y,
+		0.0f,
 		-m_farZ, m_farZ);
 	//return glm::perspective(glm::radians(1.0f), 1.0f, 0.1f, 100.0f * window_size.x);
 }
@@ -265,6 +265,12 @@ glm::mat4 GLContent::getHyperPerspectiveView()
 }
 
 
+void GLContent::handleKeyEvent()
+{
+
+
+}
+
 //GL graphics loop
 void			GLContent::glLoop(gfx::engine::GLContentLoop graphics_loop, GLFWwindow * window)
 {
@@ -276,7 +282,9 @@ void			GLContent::glLoop(gfx::engine::GLContentLoop graphics_loop, GLFWwindow * 
 
 		// start clock for this tick
 		auto start = std::chrono::high_resolution_clock::now();
-		
+
+		handleKeyEvent();
+
 		m_oldMousPos = m_newMousePos;
 		m_newMousePos = getMousePos();
 		m_keyboard.run();
@@ -286,6 +294,7 @@ void			GLContent::glLoop(gfx::engine::GLContentLoop graphics_loop, GLFWwindow * 
 		//Swap buffers  
 		glfwSwapBuffers(window);
 		//Get and organize events, like keyboard and mouse input, window resizing, etc...  
+		m_keyDown = NULL;
 		glfwPollEvents();
 
 		// stop clock
@@ -295,7 +304,6 @@ void			GLContent::glLoop(gfx::engine::GLContentLoop graphics_loop, GLFWwindow * 
 		newWait = newWait < 0 ? 0 : newWait;
 		// throttle the graphics loop to cap at a certain fps
 		std::this_thread::sleep_for(std::chrono::milliseconds(newWait));
-
 	} //Check if the ESC or Q key had been pressed or if the window had been closed  
 	while (!glfwWindowShouldClose(window));
 
@@ -351,8 +359,8 @@ GLFWwindow *				GLContent::initWindow(gfx::engine::GLContentInit init, GLFWkeyfu
 	CINFO("    GLFW window context set");
 
 	//Sets the key callback  
-	glfwSetKeyCallback(window, key_func);
-	glfwSetMouseButtonCallback(window, mouse_func);
+	//glfwSetKeyCallback(window, key_func);
+	//glfwSetMouseButtonCallback(window, mouse_func);
 	
 	//Initialize GLEW  
 	GLenum err = glewInit();

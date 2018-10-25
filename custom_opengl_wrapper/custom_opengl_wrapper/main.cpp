@@ -1,5 +1,6 @@
 
 #include <stdio.h>
+#include <iostream>
 #include <vector>
 
 #include "GLContent.h"
@@ -56,22 +57,6 @@ void onClosedWindow()
 	CINFO("Window has closed.");
 }
 
-void testPrint()
-{
-	CINFO("lolololol");
-}
-
-class TestClass
-{
-public:
-	void print()
-	{
-		CINFO("u fucking legend");
-	}
-};
-
-TestClass testClass;
-
 void init()
 {
 	//// CREATE GLSL PROGAMS
@@ -114,7 +99,7 @@ void init()
 
 	gfx::gui::GFXWindow * window = new gfx::gui::GFXWindow(glm::vec2(50, 50), glm::vec2(300, 300));
 	window->link(&gfx::gui::GFXWindow::onClose, gfx::gui::ACTION(onClosedWindow));
-	gfxManager.addComponent(window);	
+	gfxManager.addComponent(window);
 	gfx::gui::GFXButton * button = new gfx::gui::GFXButton(glm::vec2(25, 50), glm::vec2(300, 50), "Press Me");
 	window->addComponent(button);
 	gfx::gui::GFXSpinner * spinner = new gfx::gui::GFXSpinner(glm::vec2(25, 150), glm::vec2(100, 25), 0, 0.33f);
@@ -133,8 +118,12 @@ void init()
 	window = new gfx::gui::GFXWindow(glm::vec2(50, 50), glm::vec2(300, 300));
 	window->link(&gfx::gui::GFXWindow::onClose, gfx::gui::ACTION(onClosedWindow));
 	gfxManager.addComponent(window);
-	gfx::gui::GFXTextEdit * textEdit = new gfx::gui::GFXTextEdit("t", GFX_GUI_DEFAULT_FONT_SIZE, glm::vec2(25, 25), glm::vec2(300,100));
+	gfx::gui::GFXTextEdit * textEdit = new gfx::gui::GFXTextEdit("hello world!", GFX_GUI_DEFAULT_FONT_SIZE, glm::vec2(25, 150), glm::vec2(300,100));
+	textEdit->setColor(gfx::RED_A);
+	textEdit->setMultiline(true);
 	window->addComponent(textEdit);
+	gfx::gui::GFXScrollBar * vScrollBar = new gfx::gui::GFXScrollBar(glm::vec2(200, 25), glm::vec2(25, 200), 0,0.2f, true);
+	window->addComponent(vScrollBar);
 
 	gfxManager.init();
 	gfxManager.validate();
@@ -184,9 +173,9 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 	}
 }
 static void	key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
-{
-	if (action == GLFW_PRESS || action == 2)
-	{
+{	
+	if (action == GLFW_PRESS || action == GLFW_REPEAT)
+	{		
 		switch (key)
 		{
 		case GLFW_KEY_B:

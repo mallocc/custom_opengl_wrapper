@@ -139,12 +139,12 @@ namespace gfx
 					for (int x = 0; x < w; ++x)
 					{
 						glm::vec2 t = s * glm::vec2(x, y);
-						n.push_back(b + t);
 						n.push_back(a + t);
-						n.push_back(d + t);
-						n.push_back(d + t);
-						n.push_back(c + t);
 						n.push_back(b + t);
+						n.push_back(c + t);
+						n.push_back(c + t);
+						n.push_back(d + t);
+						n.push_back(a + t);
 					}
 				return n;
 			}

@@ -18,6 +18,10 @@ namespace alib
 			{
 				m_oldEvents[ix] = m_newEvents[ix];
 				m_newEvents[ix] = !!GetAsyncKeyState(ix);
+				if (m_newEvents[ix])
+					m_heldTime[ix]++;
+				else
+					m_heldTime[ix] = 0;
 			}
 		}
 
@@ -25,7 +29,11 @@ namespace alib
 		{
 			return m_newEvents[key];
 		}
-		
+		bool isKeyTyped(unsigned char key)
+		{
+			return isKeyPressed(key) || m_heldTime[key] > m_heldTimeThreshold && !(m_heldTime[key] % m_heldTimeRollover);
+		}
+
 		bool isKeyUp(unsigned char key)
 		{
 			return !m_newEvents[key];
@@ -51,7 +59,38 @@ namespace alib
 						return m_keyList[i][1];
 			return -1;
 		}
+		int getTyped()
+		{
+			for (int i = 0; i < 48; ++i)
+				if (isKeyTyped(m_keyList[i][0]))
+					if (isKeyDown(VK_SHIFT))
+						return m_keyList[i][2];
+					else
+						return m_keyList[i][1];
+			return -1;
+		}
 
+		int getKeyPressed()
+		{
+			for (int i = 0; i < 256; ++i)
+				if (isKeyPressed(i))
+					return i;
+			return -1;
+		}
+		int getKeyDown()
+		{
+			for (int i = 0; i < 256; ++i)
+				if (isKeyDown(i))
+					return i;
+			return -1;
+		}		
+		int getKeyReleased()
+		{
+			for (int i = 0; i < 256; ++i)
+				if (isKeyReleased(i))
+					return i;
+			return -1;
+		}
 		KeyEvents getAllPressed()
 		{
 			KeyEvents v;
@@ -73,9 +112,12 @@ namespace alib
 	private:
 		unsigned char m_oldEvents[256] = { 0 };
 		unsigned char m_newEvents[256] = { 0 };
+		int m_heldTime[256] = { 0 };
+		int m_heldTimeThreshold = 25;
+		int m_heldTimeRollover = 3;
 
 		// KEY LIST //
-		 char			m_keyList[49][3] =
+		 char			m_keyList[54][3] =
 		{
 			{ (char)0x41, 'a', 'A' },
 			{ (char)0x42, 'b', 'B' },
@@ -125,7 +167,12 @@ namespace alib
 			{  (char) 0xDB, '[', '{' },
 			{  (char) 0xDD, ']', '}' },
 			{  (char) 0x20, ' ', ' ' },
-			{  (char) VK_LBUTTON, '\0', '\0' }
+			{  (char) VK_LBUTTON, '\0', '\0' },
+			{  (char) VK_RBUTTON, '\0', '\0' },
+			{  (char) VK_LEFT, '\0', '\0' },
+			{  (char) VK_RIGHT, '\0', '\0' },
+			{  (char) VK_UP, '\0', '\0' },
+			{  (char) VK_DOWN, '\0', '\0' }
 		};
 	};
 

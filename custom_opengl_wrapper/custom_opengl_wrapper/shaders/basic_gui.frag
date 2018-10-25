@@ -25,6 +25,7 @@ void main()
 {		
 	vec4 texture_color = texture2D(u_tex, o_uv);
 	vec4 font_color = u_c;
+	font_color *= texture_color;
 	font_color.a = texture_color.r;
 
 // apply fragment color

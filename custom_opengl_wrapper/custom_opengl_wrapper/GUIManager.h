@@ -49,15 +49,6 @@ namespace gfx
 		{
 		public:
 			// Draws the mesh including linking the model matrix
-			void draw(unsigned char c, glm::vec2 pos, glm::vec2 scale, gfx::engine::MeshHandle_T handles)
-			{
-				handles.modelMatHandle->load(glm::translate(glm::mat4(1.), glm::vec3(pos,0)) *
-					glm::scale(glm::mat4(1.), glm::vec3(scale,0)));
-				handles.colorHandle->load(m_color);
-				handles.flagHandle->load(GFX_GUI_SHADER_FONT);
-				drawArray(c, handles.textureHandle);
-			}
-			// Draws the mesh including linking the model matrix
 			void draw(unsigned char c, glm::mat4 modelMat, glm::vec2 pos, glm::vec2 scale, gfx::engine::MeshHandle_T handles)
 			{
 				handles.modelMatHandle->load(modelMat * glm::translate(glm::mat4(1.), glm::vec3(pos, 0)) *
@@ -809,8 +800,7 @@ namespace gfx
 			}
 			bool isDragging(gfx::engine::GLContent * content)
 			{
-				return	glm::length(content->getMouseDelta()) > 0 && 
-					m_onDown;
+				return	glm::length(content->getMouseDelta()) > 0 && m_onDown;
 			}
 			bool isHovering(gfx::engine::GLContent * content)
 			{
@@ -827,11 +817,26 @@ namespace gfx
 
 			bool isKeyPressed(gfx::engine::GLContent * content, char key)
 			{
-				return content->getKeyboardEvents()->isKeyPressed(key);
+				return content->getKeyboardEvents()->isKeyPressed(key) && m_manager->isFocused(this);
+			}
+			bool isKeyDown(gfx::engine::GLContent * content, char key)
+			{
+				return content->getKeyboardEvents()->isKeyDown(key) && m_manager->isFocused(this);
+			}
+			bool isKeyTyped(gfx::engine::GLContent * content, char key)
+			{
+				return content->getKeyboardEvents()->isKeyTyped(key) && m_manager->isFocused(this);
 			}
 			bool isKeyReleased(gfx::engine::GLContent * content, char key)
 			{
-				return content->getKeyboardEvents()->isKeyReleased(key);
+				return content->getKeyboardEvents()->isKeyReleased(key) && m_manager->isFocused(this);
+			}
+
+			char getKeyTyped(gfx::engine::GLContent * content)
+			{
+				if (m_manager->isFocused(this))
+					return content->getKeyboardEvents()->getTyped();
+				return -1;
 			}
 
 			// not finished
@@ -845,6 +850,9 @@ namespace gfx
 				onPressed(isPressed(content));
 				onDown(isDown(content));
 				onReleased(isReleased(content));
+				//onKeyPressed(isKeyPressed(content, content->getKeyboardEvents()->getKeyPressed()));
+				//onKeyDown(isKeyDown(content, content->getKeyboardEvents()->getKeyPressed()));
+				//onKeyReleased(isKeyReleased(content, content->getKeyboardEvents()->getKeyPressed()));
 			}
 
 			GFXClickable() {}
@@ -867,12 +875,9 @@ namespace gfx
 			bool m_onReleased = false;
 						
 			int m_heldCounter = 0;
-			int m_heldThreshold = 100;
+			int m_heldThreshold = 25;
 			int m_doubleClickCounter = 0;
 			int m_doubleClickThreshold = 50;
-
-			//bool m_onDownKey = false;
-			//bool m_onReleasedKey = false;
 		};
 
 
@@ -950,7 +955,6 @@ namespace gfx
 				if (isPressed(content))
 				{
 					m_toggledState = !m_toggledState && m_isToggleable;
-					CINFO(m_id);
 					callTrigger(&GFXButton::onButtonPressed);
 				}
 			}
@@ -992,8 +996,7 @@ namespace gfx
 				m_size = size;
 				m_text = text;
 			}
-
-			
+						
 		protected:			
 			bool m_toggledState = false;
 			bool m_isToggleable = false;
@@ -1028,8 +1031,7 @@ namespace gfx
 					// horizontal grab bars resize
 					if (m_isResizableX)
 						if (m_leftResizeBar->isDragging(content))
-						{
-						
+						{						
 							pos.x += delta.x;
 							size.x -= delta.x;
 							if (!isSmallerThanMin(size, m_minSize))
@@ -1056,9 +1058,7 @@ namespace gfx
 					if (m_isResizableY)
 						if (m_bottomResizeBar->isDragging(content))
 						{
-
-							pos.y += delta.y;
-							size.y -= delta.y;
+							size.y += delta.y;
 							if (!isSmallerThanMin(size, m_minSize))
 							{
 								m_pos = pos;
@@ -1074,8 +1074,7 @@ namespace gfx
 						{
 							pos.x += delta.x;
 							size.x -= delta.x;
-							pos.y += delta.y;
-							size.y -= delta.y;
+							size.y += delta.y;
 							if (!isSmallerThanMin(size, m_minSize))
 							{
 								m_pos = pos;
@@ -1088,8 +1087,7 @@ namespace gfx
 						else if (m_bottomRightResizeBar->isDragging(content))
 						{
 							size.x += delta.x;
-							pos.y += delta.y;
-							size.y -= delta.y;
+							size.y += delta.y;
 							if (!isSmallerThanMin(size, m_minSize))
 							{
 								m_pos = pos;
@@ -1138,32 +1136,21 @@ namespace gfx
 				m_minSize = m_group.getMinimumBounds(GFX_GUI_DEFAULT_PADDING);
 				inflateToContent();
 
-				glm::vec2 pos = glm::vec2(), size = m_size;
+				m_components.setPos(glm::vec2());
+				m_components.setSize(m_size);
 
-				m_components.setPos(pos);
-				m_components.setSize(size);
+				m_leftResizeBar->setSize(glm::vec2(m_deadzone, m_size.y));
+				m_rightResizeBar->setPos(glm::vec2(m_size.x - m_deadzone, 0));
+				m_rightResizeBar->setSize(glm::vec2(m_deadzone, m_size.y));
+				m_bottomResizeBar->setPos(glm::vec2(0, m_size.y - m_deadzone));
+				m_bottomResizeBar->setSize(glm::vec2(m_size.x, m_deadzone));
+				m_bottomRightResizeBar->setPos(glm::vec2(m_size.x - m_deadzone, m_size.y - m_deadzone));
+				m_bottomLeftResizeBar->setPos(glm::vec2(0, m_size.y - m_deadzone));
 
-				m_leftResizeBar->setSize(glm::vec2(m_deadzone, size.y));
-				m_rightResizeBar->setPos(glm::vec2(size.x - m_deadzone, 0));
-				m_rightResizeBar->setSize(glm::vec2(m_deadzone, size.y));
-				m_bottomResizeBar->setSize(glm::vec2(size.x, m_deadzone));
-				m_bottomRightResizeBar->setPos(glm::vec2(size.x - m_deadzone, 0));
+				m_bar->setSize(glm::vec2(m_size.x, m_topBarSize));
 
-				pos.x = 0;
-				pos.y = size.y - 20;
-				size.y = 20;
-				m_bar->setPos(pos);
-				m_bar->setSize(size);
-
-				pos.x = size.x - 20;
-				size.x = 20;
-				size.y = 20;
-				m_close->setPos(pos);
-				m_close->setSize(size);
-
-				pos.x -= 20;
-				m_maxmin->setPos(pos);
-				m_maxmin->setSize(size);			
+				m_close->setPos(glm::vec2(m_size.x - m_topBarSize, 0));
+				m_maxmin->setPos(glm::vec2(m_size.x - m_topBarSize*2, 0));
 
 				m_group.validateGroup();
 				m_components.validate();				
@@ -1177,10 +1164,8 @@ namespace gfx
 				if (m_colorStyle == GFX_NULL_COLORSTYLE)
 					inheritColorStyle();
 
-				glm::vec2 pos = glm::vec2(), size = m_size;
-
 				// window ui components container
-				m_components = gfx::gui::GFXContainer(pos, size, m_colorStyle->colors[2]);
+				m_components = gfx::gui::GFXContainer(glm::vec2(), m_size, m_colorStyle->colors[2]);
 				m_components.setAlpha(0.8f);
 				m_components.setColorStyle(m_colorStyle);
 
@@ -1191,45 +1176,38 @@ namespace gfx
 				colorStyle->colors[2] = m_colorStyle->colors[2];
 
 				// left resize grab
-				m_leftResizeBar = new gfx::gui::GFXButton(glm::vec2(), glm::vec2(m_deadzone, size.y));
+				m_leftResizeBar = new gfx::gui::GFXButton(glm::vec2(), glm::vec2(m_deadzone, m_size.y));
 				m_components.addComponent(m_leftResizeBar);
 				m_leftResizeBar->setColorStyle(colorStyle);
 				// right resize grab
-				m_rightResizeBar = new gfx::gui::GFXButton(glm::vec2(size.x - m_deadzone, 0), glm::vec2(m_deadzone, size.y));
+				m_rightResizeBar = new gfx::gui::GFXButton(glm::vec2(m_size.x - m_deadzone, 0), glm::vec2(m_deadzone, m_size.y));
 				m_components.addComponent(m_rightResizeBar);
 				m_rightResizeBar->setColorStyle(colorStyle);
 				// bottom resize grab
-				m_bottomResizeBar = new gfx::gui::GFXButton(glm::vec2(), glm::vec2(size.x, m_deadzone));
+				m_bottomResizeBar = new gfx::gui::GFXButton(glm::vec2(0, m_size.y - m_deadzone), glm::vec2(m_size.x, m_deadzone));
 				m_components.addComponent(m_bottomResizeBar);
 				m_bottomResizeBar->setColorStyle(colorStyle);
 				// bottom left resize grab
-				m_bottomLeftResizeBar = new gfx::gui::GFXButton(glm::vec2(), glm::vec2(m_deadzone, m_deadzone));
+				m_bottomLeftResizeBar = new gfx::gui::GFXButton(glm::vec2(0, m_size.y - m_deadzone), glm::vec2(m_deadzone, m_deadzone));
 				m_components.addComponent(m_bottomLeftResizeBar);
 				m_bottomLeftResizeBar->setColorStyle(colorStyle);
 				// bottom right resize grab
-				m_bottomRightResizeBar = new gfx::gui::GFXButton(glm::vec2(size.x - m_deadzone, 0), glm::vec2(m_deadzone, m_deadzone));
+				m_bottomRightResizeBar = new gfx::gui::GFXButton(glm::vec2(m_size.x - m_deadzone, m_size.y - m_deadzone), glm::vec2(m_deadzone, m_deadzone));
 				m_components.addComponent(m_bottomRightResizeBar);
 				m_bottomRightResizeBar->setColorStyle(colorStyle);
 
 				// top move grab
-				pos.x = 0;
-				pos.y = size.y - m_topBarSize;
-				size.y = m_topBarSize;
-				m_bar = new gfx::gui::GFXButton(pos, size, m_title);
+				m_bar = new gfx::gui::GFXButton(glm::vec2(), glm::vec2(m_size.x, m_topBarSize), m_title);
 				m_components.addComponent(m_bar);
 
 				// close window button
-				pos.x = size.x - m_topBarSize;
-				size.x = m_topBarSize;
-				size.y = m_topBarSize;
-				m_close = new gfx::gui::GFXButton(pos, size);
+				m_close = new gfx::gui::GFXButton(glm::vec2(m_size.x - m_topBarSize, 0), glm::vec2(m_topBarSize, m_topBarSize));
 				m_components.addComponent(m_close);
 				colorStyle->colors[0] = colorStyle->colors[2];
 				m_close->setColorStyle(colorStyle);
 
 				// scale window button
-				pos.x -= m_topBarSize;
-				m_maxmin = new gfx::gui::GFXButton(pos, size);
+				m_maxmin = new gfx::gui::GFXButton(glm::vec2(m_size.x - m_topBarSize * 2, 0), glm::vec2(m_topBarSize, m_topBarSize));
 				m_components.addComponent(m_maxmin);
 				colorStyle->colors[0] = colorStyle->colors[1];
 				m_maxmin->setColorStyle(colorStyle);
@@ -1380,8 +1358,8 @@ namespace gfx
 					m_size.x += content->getWindowSize().x - (m_pos.x + m_size.x);
 				if (m_pos.x < 0)
 					m_size.x += m_pos.x;
-				if (m_pos.y < 0)
-					m_size.y += m_pos.y;
+				if (m_pos.y + m_size.y> content->getWindowSize().y)
+					m_size.y += content->getWindowSize().y - (m_pos.y + m_size.y);
 			}
 			void confinePositionToWindow(gfx::engine::GLContent * content)
 			{
@@ -1507,7 +1485,7 @@ namespace gfx
 			void setValue(float amount)
 			{
 				m_value = amount;
-				char number[24]; // dummy size, you should take care of the size!
+				char number[24];
 				sprintf(number, "%.1f", m_value);
 				m_label->setText(number);
 			}
@@ -1516,13 +1494,6 @@ namespace gfx
 				return m_value;
 			}
 
-			GFXSpinner()
-			{
-				m_value = 0;
-				m_inc = 1;
-				m_pos = glm::vec2();
-				m_size = glm::vec2();
-			}
 			GFXSpinner(glm::vec2 pos, glm::vec2 size, float value, float inc)
 			{
 				m_pos = pos;
@@ -1563,50 +1534,123 @@ namespace gfx
 			{
 				check(content);
 				keyTyped(content);
-				returnPressed(content);
-				backspacePressed(content);
 				return m_onDown;
 			}
 			void draw(glm::mat4 modelMat, gfx::engine::MeshHandle_T handles)
 			{
+				++m_cursorBlinkTimer;
 				bool endOfText = true;
-				float ix = 0, iy = m_size.y; int ic = 0;
-				for (ix = 0, iy = m_size.y - m_fontSize, ic = 0; ic < m_text.length(); ix += m_fontSize / 2.0f, ic++)
-				{			
-					if (ix >= m_size.x - m_fontSize/2)
-					{
-						iy -= m_fontSize;
-						ix = 0;		
-						if ((m_text[ic]) == ' ')
-							ic++;
-					}
-					while (m_text[ic] == '\n')
-					{
-						iy -= m_fontSize;
+				float ix, iy;
+				int ic;
+				for (ix = 0, iy = 0, ic = 0; ic < m_text.length(); ix += m_fontSize / 2.0f, ic++)
+				{		
+					if (ix + m_fontSize / 2 > m_size.x)
+					{						
+						iy += m_fontSize;
 						ix = 0;
-						ic++;		
-						if (iy <= 0)
+						if (!m_isMultiline)
 						{
 							endOfText = false;
 							break;
 						}
 					}
-					if (iy <= 0)
+					while (m_text[ic] == '\n')
+					{ 
+						if (m_cursorPosition == ic)
+							if (canDrawCursor())
+								drawCursor(modelMat, handles, ix, iy);
+						iy += m_fontSize;
+						ix = 0;		
+						ic++;
+						if (iy + m_fontSize > m_size.y)
+						{
+							endOfText = false;
+							break;
+						}						
+					}
+					if (iy + m_fontSize > m_size.y)
 					{
 						endOfText = false;
 						break;
-					}
-					m_font.draw(m_text[ic], modelMat, glm::vec2(ix, iy) + m_pos, glm::vec2(m_fontSize), handles);
-					if (m_cursorPosition == ic && m_manager->isFocused(this))
-						m_font.draw('|', modelMat, glm::vec2(ix + m_fontSize / 3, iy - m_fontSize / 3) + m_pos, glm::vec2(m_fontSize, m_fontSize * 1.5), handles);
+					}		
+					if (ic == m_text.length())
+						break;
+					m_font.draw(m_text[ic], modelMat, glm::vec2(ix, iy) + m_pos, glm::vec2(m_fontSize), handles);				
+					if (m_cursorPosition == ic)
+						if (canDrawCursor())
+							drawCursor(modelMat, handles, ix, iy);
 				}
-				if(m_manager->isFocused(this))
-					if (m_cursorPosition == -1)
-						m_font.draw('|', modelMat, glm::vec2(ix - m_fontSize / 3, iy - m_fontSize / 3) + m_pos, glm::vec2(m_fontSize, m_fontSize * 1.5), handles);
-					else if (!endOfText)
-						m_font.draw('|', modelMat, glm::vec2(m_size.x - m_fontSize / 2, iy - m_fontSize / 3 + m_fontSize) + m_pos, glm::vec2(m_fontSize, m_fontSize * 1.5), handles);
+				if(canDrawCursor())
+					if (!endOfText)
+						drawCursor(modelMat, handles, m_size.x, iy - m_fontSize);
+					else if(m_cursorPosition == m_text.size() || m_text.size() == 0)
+						drawCursor(modelMat, handles, ix, iy);
+			}
+
+			bool canDrawCursor()
+			{
+				return (m_cursorBlinkTimer % m_cursorBlinkTime) < m_cursorBlinkTime / 2 && m_manager->isFocused(this);
+			}
+			void drawCursor(glm::mat4 modelMat, gfx::engine::MeshHandle_T handles, float ix, float iy)
+			{
+				m_font.draw('|', modelMat, glm::vec2(ix - m_fontSize / 3, iy - m_fontSize / 3) + m_pos, glm::vec2(m_fontSize, m_fontSize * 1.5), handles);
 			}
 			
+			glm::vec2 getCursorPosOffset(int pos)
+			{
+				float ix, iy;
+				int ic;
+				for (ix = 0, iy = 0, ic = 0; ic < m_text.length() && ic < pos; ix += m_fontSize / 2.0f, ic++)
+				{
+					if (ix + m_fontSize / 2 > m_size.x)
+					{
+						iy += m_fontSize;
+						ix = 0;
+						if (!m_isMultiline)
+							break;
+					}
+					while (m_text[ic] == '\n')
+					{
+						iy += m_fontSize;
+						ix = 0;
+						ic++;
+						if (iy + m_fontSize > m_size.y)
+							break;
+					}
+					if (iy + m_fontSize > m_size.y || ic == m_text.length())
+						break;
+				}
+				return glm::vec2(ix, iy);
+			}
+			int getEOLPos(int start)
+			{
+				float ix;
+				int ic = start;
+				if (m_text[ic] == '\n')
+					ic++;
+				for (ix = getCursorPosOffset(start).x, ic = start; ic < m_text.length(); ix += m_fontSize / 2.0f, ic++)
+				{
+					if (ix + m_fontSize / 2 > m_size.x)
+						break;
+					while (m_text[ic] == '\n')
+						break;
+				}
+				return ic;
+			}
+			int getSOLPos(int start)
+			{
+				float ix;
+				int ic;
+				for (ix = getCursorPosOffset(start).x, ic = start; ic >= 0; ix -= m_fontSize / 2.0f, ic--)
+				{
+					if (ix <= 0)
+						break;
+					while (m_text[ic] == '\n')
+						break;
+				}
+				return ic;
+			}
+
 			void setText(std::string text)
 			{
 				m_text = text;
@@ -1621,51 +1665,248 @@ namespace gfx
 				m_font.setColor(color);
 			}
 
+			void insertChar(char c)
+			{
+				m_text.insert(m_cursorPosition,1,c);
+				m_cursorPosition++;
+				m_cursorBlinkTimer = 0;
+			}
+
 			void keyTyped(gfx::engine::GLContent * content)
 			{
-				char key = content->getKeyboardEvents()->getChar();
+				char key = content->getKeyboardEvents()->getTyped();
 				if (key != -1 && m_manager->isFocused(this))
 				{
-					CINFO(alib::StringFormat("%0").arg(key).str());
-					m_text.push_back(key);
-					m_cursorPosition++;
+					insertChar(key);					
 				}
-			}
-			void returnPressed(gfx::engine::GLContent * content)
-			{
-				if (isKeyPressed(content, VK_RETURN) && m_manager->isFocused(this))
+				if (isKeyTyped(content, VK_RETURN) && m_manager->isFocused(this))
 				{
-					m_text.push_back('\n');
-					m_cursorPosition++;
+					insertChar('\n');
 				}
-			}
-			void backspacePressed(gfx::engine::GLContent * content)
-			{
-				if (isKeyPressed(content, VK_BACK) && m_manager->isFocused(this))
+				if (isKeyTyped(content, VK_BACK) && m_manager->isFocused(this))
 				{
 					if (m_text.size() > 0)
 					{
-						m_text = m_text.erase(m_cursorPosition);
+						m_text.erase(m_text.begin() + m_cursorPosition - 1);
 						m_cursorPosition--;
+						m_cursorBlinkTimer = 0;
 					}
 				}
+				if (isKeyTyped(content, VK_TAB) && m_manager->isFocused(this))
+				{
+					insertChar(' ');
+					insertChar(' ');
+				}
+				if (isKeyTyped(content, VK_RIGHT) && m_manager->isFocused(this))
+				{
+					if (m_cursorPosition < m_text.size())
+					{
+						m_cursorPosition++;
+						m_cursorBlinkTimer = 0;
+					}
+				}
+				if (isKeyTyped(content, VK_LEFT) && m_manager->isFocused(this))
+				{
+					if (m_cursorPosition > 0)
+					{
+						m_cursorPosition--;
+						m_cursorBlinkTimer = 0;
+					}
+				}
+				if (isKeyTyped(content, VK_HOME) && m_manager->isFocused(this))
+				{
+					//m_cursorPosition = getSOLPos(m_cursorPosition);
+				}
+				if (isKeyTyped(content, VK_END) && m_manager->isFocused(this))
+				{
+					//m_cursorPosition = getEOLPos(m_cursorPosition);
+				}
+
+				if (isKeyTyped(content, VK_DOWN) && m_manager->isFocused(this))
+				{
+					CINFO(alib::StringFormat("%0").arg(m_cursorPosition).str());
+				}
+			}
+
+			void setMultiline(bool isMultiline)
+			{
+				m_isMultiline = isMultiline;
 			}
 
 			GFXTextEdit(std::string text, int fontSize, glm::vec2 pos, glm::vec2 size)
 			{
 				m_fontSize = fontSize;
 				m_text = alib::StringFormat(text).str();
-				m_cursorPosition = m_text.size() - 1;
+				m_cursorPosition = m_text.size();
 				m_pos = pos;
 				m_size = size;
 			}
 
+		protected:
 			int m_fontSize = GFX_GUI_DEFAULT_FONT_SIZE;
 			int m_cursorPosition = 0;
 			bool m_isMultiline = false;
+			int m_cursorBlinkTimer = 0;
+			int m_cursorBlinkTime = 50;
 			GFXFont m_font;
 			std::string m_text;
 		};
 
+		class GFXScrollBar : public GFXContainer, public GFXLinker<GFXScrollBar>
+		{
+		public:
+			void update(gfx::engine::GLContent * content)
+			{
+				if (m_bar->isDragging(content))
+				{
+					if (m_isVertical)
+						setValue((m_bar->m_pos.y + content->getMouseDelta().y - m_size.x) / (m_size.y - m_size.x * 3));
+					else
+						setValue((m_bar->m_pos.x + content->getMouseDelta().x - m_size.y) / (m_size.x - m_size.y * 3));
+				}
+				
+				if (m_bar->isReleasedOver(content))
+					snapValue();
+
+				updateGroup(content);
+			}
+			bool checkEvents(gfx::engine::GLContent * content)
+			{
+				onUp(content);
+				onDown(content);
+				onBarMove(content);
+				return checkGroupEvents(content);
+			}
+			void draw(glm::mat4 modelMat, gfx::engine::MeshHandle_T handles)
+			{
+				drawGroup(modelMat * getRelativeModelMat(), handles);
+			}
+
+			GFXComponent * init(GFXManager * manager, GFXComponent * parent)
+			{
+				setManager(manager);
+				setParent(parent);
+				setId(manager->addId("scrollbar"));
+				if (m_colorStyle == GFX_NULL_COLORSTYLE)
+					inheritColorStyle();
+
+				if (m_isVertical)
+				{
+					m_down = new gfx::gui::GFXButton(glm::vec2(0, m_size.y - m_size.x), glm::vec2(m_size.x, m_size.x), "\\/");
+					addComponent(m_down);
+
+					m_up = new gfx::gui::GFXButton(glm::vec2(), glm::vec2(m_size.x, m_size.x), "/\\");
+					addComponent(m_up);
+
+					m_bar = new gfx::gui::GFXButton(glm::vec2(0, m_size.x), glm::vec2(m_size.x, m_size.x), "=");
+					addComponent(m_bar);
+				}
+				else
+				{
+					m_down = new gfx::gui::GFXButton(glm::vec2(m_size.x - m_size.y, 0), glm::vec2(m_size.y, m_size.y), ">");
+					addComponent(m_down);
+
+					m_up = new gfx::gui::GFXButton(glm::vec2(), glm::vec2(m_size.y, m_size.y), "<");
+					addComponent(m_up);
+
+					m_bar = new gfx::gui::GFXButton(glm::vec2(m_size.y, 0), glm::vec2(m_size.y, m_size.y), "||");
+					addComponent(m_bar);
+				}
+
+				initGroup(manager, this);
+
+				return this;
+			}
+
+			void validate()
+			{
+				if (m_isVertical)
+				{
+					m_down->setPos(glm::vec2(0, m_size.y - m_size.x));
+					m_down->setSize(glm::vec2(m_size.x, m_size.x));
+					m_up->setPos(glm::vec2());
+					m_up->setSize(glm::vec2(m_size.x, m_size.x));
+					m_bar->setPos(glm::vec2(0, getValue() * (m_size.y - m_size.x * 3) + m_size.x));
+					m_bar->setSize(glm::vec2(m_size.x, m_size.x));
+				}
+				else
+				{
+					m_down->setPos(glm::vec2(m_size.x - m_size.y, 0));
+					m_down->setSize(glm::vec2(m_size.y, m_size.y));
+					m_up->setPos(glm::vec2());
+					m_up->setSize(glm::vec2(m_size.y, m_size.y));
+					m_bar->setPos(glm::vec2(getValue() * (m_size.x - m_size.y * 3) + m_size.y, 0));
+					m_bar->setSize(glm::vec2(m_size.y, m_size.y));
+				}
+
+				validateGroup();
+			}
+
+			void snapValue()
+			{
+				m_value = round(m_value / m_inc) / (1 / m_inc);
+			}
+			void setValue(float amount)
+			{
+				m_value = amount;
+				m_value = min(m_value, 1);
+				m_value = max(m_value, 0);
+				char number[24];
+				sprintf(number, "%.1f", m_value);
+			}
+			float getValue()
+			{
+				return m_value;
+			}
+
+			void onDown(gfx::engine::GLContent * content)
+			{
+				if (m_down->isPressed(content) || m_down->isHeldOver(content))
+				{
+					m_value += m_inc;
+					m_value = min(m_value, 1);
+					setValue(m_value);
+					validate();
+					callTrigger(&GFXScrollBar::onDown);
+				}
+			}
+			void onUp(gfx::engine::GLContent * content)
+			{
+				if (m_up->isPressed(content) || m_up->isHeldOver(content))
+				{
+					m_value -= m_inc;
+					m_value = max(m_value, 0);
+					setValue(m_value);
+					validate();
+					callTrigger(&GFXScrollBar::onUp);
+				}
+			}
+			void onBarMove(gfx::engine::GLContent * content)
+			{
+				if (m_bar->isDragging(content))
+				{
+					validate();
+					callTrigger(&GFXScrollBar::onBarMove);
+				}
+			}
+
+			GFXScrollBar(glm::vec2 pos, glm::vec2 size, float value, float inc, bool isVertical)
+			{
+				m_pos = pos;
+				m_size = size;
+				m_value = value;
+				m_inc = inc;
+				m_isVertical = isVertical;
+			}
+		protected:
+			float m_value;
+			float m_inc;
+
+			bool m_isVertical = false;
+
+			GFXButton * m_down;
+			GFXButton * m_up;
+			GFXButton * m_bar;
+		};
 	}
 }
